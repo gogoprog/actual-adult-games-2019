@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <script src="../deps/jquery-3.3.1.min.js"></script>
   <script src="../deps/whiplash/deps/haxe-phaser/lib/phaser.js"></script>
+  <script src="http://localhost:35729/livereload.js"></script>
   <style>
     html,
     body {
@@ -19,8 +20,9 @@
       position: absolute;
       left: 0px;
       top: 0px;
-      width: 100%;
-      height: 100%;
+      width: 640px;
+      height: 480px;
+      background-color:brown;
     }
 
     canvas {
@@ -32,6 +34,8 @@
       image-rendering: crisp-edges;
       image-rendering: pixelated;
       -ms-interpolation-mode: nearest-neighbor;
+      width: 640px !important;
+      height: 480px !important;
     }
 
     .root>div {

@@ -1292,18 +1292,48 @@ game_AudioManager.playMusic = function(name) {
 	var _this2 = game_AudioManager.sounds;
 	game_AudioManager.music = __map_reserved[name] != null ? _this2.getReserved(name) : _this2.h[name];
 };
+var game_Config = function() { };
+game_Config.__name__ = ["game","Config"];
+var game_Coord = function(x,y) {
+	this.x = x;
+	this.y = y;
+};
+game_Coord.__name__ = ["game","Coord"];
+game_Coord.prototype = {
+	__class__: game_Coord
+};
 var game_Factory = function() { };
 game_Factory.__name__ = ["game","Factory"];
 game_Factory.preload = function(game1) {
+	game1.load.image("car","../data/textures/car.png");
+	game1.load.image("grass","../data/textures/grass.png");
+	game1.load.image("grass-cut","../data/textures/grass-cut.png");
 };
 game_Factory.init = function(game1) {
+};
+game_Factory.createTile = function(i,j) {
+	var e = new ash_core_Entity();
+	e.add(new whiplash_phaser_Sprite("grass"));
+	e.add(new whiplash_phaser_Transform());
+	e.add(new game_Tile(i,j));
+	e.get(whiplash_phaser_Sprite).anchor.set(0.5,0.5);
+	return e;
+};
+game_Factory.createMachine = function() {
+	var e = new ash_core_Entity();
+	e.add(new whiplash_phaser_Sprite("car"));
+	e.add(new whiplash_phaser_Transform());
+	e.add(new game_Machine());
+	e.get(whiplash_phaser_Sprite).anchor.set(0.5,0.5);
+	return e;
 };
 var game_Game = function() {
 	var _gthis = this;
 	$(window).on("load",null,function() {
-		whiplash_Lib.init(320,240,".root",{ preload : $bind(_gthis,_gthis.preload), create : $bind(_gthis,_gthis.create), update : $bind(_gthis,_gthis.update)});
+		whiplash_Lib.init(game_Config.width,game_Config.height,".root",{ preload : $bind(_gthis,_gthis.preload), create : $bind(_gthis,_gthis.create), update : $bind(_gthis,_gthis.update)});
 		_gthis.engine = whiplash_Lib.ashEngine;
 	});
+	game_Game.instance = this;
 };
 game_Game.__name__ = ["game","Game"];
 game_Game.main = function() {
@@ -1316,16 +1346,228 @@ game_Game.prototype = {
 	}
 	,create: function() {
 		var game1 = whiplash_Lib.phaserGame;
+		game1.stage.smoothed = false;
+		game1.stage.disableVisibilityChange = true;
 		game_AudioManager.init(game1);
 		game_Factory.init(game1);
 		whiplash_Input.setup(window.document.querySelector(".hud"));
+		this.createGrid(10,7);
+		this.createMachine();
+		this.engine.addSystem(new game_MachineSystem(),1);
+		this.engine.addSystem(new game_TileSystem(),1);
 	}
 	,update: function() {
 		var dt = whiplash_Lib.getDeltaTime() / 1000;
 		this.engine.update(dt);
 	}
+	,createGrid: function(w,h) {
+		this.grid = [];
+		var _g1 = 0;
+		var _g = w;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.grid[i] = [];
+			var _g3 = 0;
+			var _g2 = h;
+			while(_g3 < _g2) {
+				var j = _g3++;
+				var e = game_Factory.createTile(i,j);
+				this.engine.addEntity(e);
+			}
+		}
+	}
+	,createMachine: function() {
+		var e = game_Factory.createMachine();
+		var p = e.get(whiplash_phaser_Transform).position;
+		this.engine.addEntity(e);
+	}
 	,__class__: game_Game
 };
+var game_Machine = function() {
+	this.reachedPosition = new game_Coord(0,0);
+	var this1 = new Phaser.Point(0,0);
+	this.position = this1;
+	this.time = 0.0;
+};
+game_Machine.__name__ = ["game","Machine"];
+game_Machine.prototype = {
+	__class__: game_Machine
+};
+var game_MachineNode = function() { };
+game_MachineNode.__name__ = ["game","MachineNode"];
+game_MachineNode._getComponents = function() {
+	if(game_MachineNode._components == null) {
+		game_MachineNode._components = new ash_ClassMap();
+		var _this = game_MachineNode._components;
+		var k = whiplash_phaser_Transform;
+		var name = Type.getClassName(k);
+		var _this1 = _this.keyMap;
+		if(__map_reserved[name] != null) {
+			_this1.setReserved(name,k);
+		} else {
+			_this1.h[name] = k;
+		}
+		var _this2 = _this.valueMap;
+		if(__map_reserved[name] != null) {
+			_this2.setReserved(name,"transform");
+		} else {
+			_this2.h[name] = "transform";
+		}
+		var _this3 = game_MachineNode._components;
+		var k1 = game_Machine;
+		var name1 = Type.getClassName(k1);
+		var _this4 = _this3.keyMap;
+		if(__map_reserved[name1] != null) {
+			_this4.setReserved(name1,k1);
+		} else {
+			_this4.h[name1] = k1;
+		}
+		var _this5 = _this3.valueMap;
+		if(__map_reserved[name1] != null) {
+			_this5.setReserved(name1,"machine");
+		} else {
+			_this5.h[name1] = "machine";
+		}
+	}
+	return game_MachineNode._components;
+};
+game_MachineNode.__super__ = ash_core_Node;
+game_MachineNode.prototype = $extend(ash_core_Node.prototype,{
+	__class__: game_MachineNode
+});
+var game_MachineSystem = function() {
+	ash_tools_ListIteratingSystem.call(this,game_MachineNode,$bind(this,this.updateNode),$bind(this,this.onNodeAdded),$bind(this,this.onNodeRemoved));
+};
+game_MachineSystem.__name__ = ["game","MachineSystem"];
+game_MachineSystem.__super__ = ash_tools_ListIteratingSystem;
+game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
+	addToEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.addToEngine.call(this,engine);
+		this.engine = engine;
+	}
+	,removeFromEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.removeFromEngine.call(this,engine);
+	}
+	,updateNode: function(node,dt) {
+		var tpos = node.transform.position;
+		var mpos = node.machine.position;
+		var keys = whiplash_Input.keys;
+		var dir = new game_Coord(0,0);
+		if(__map_reserved["ArrowRight"] != null ? keys.getReserved("ArrowRight") : keys.h["ArrowRight"]) {
+			dir.x = 1;
+		}
+		if(__map_reserved["ArrowLeft"] != null ? keys.getReserved("ArrowLeft") : keys.h["ArrowLeft"]) {
+			dir.x = -1;
+		}
+		if(__map_reserved["ArrowUp"] != null ? keys.getReserved("ArrowUp") : keys.h["ArrowUp"]) {
+			dir.y = -1;
+		}
+		if(__map_reserved["ArrowDown"] != null ? keys.getReserved("ArrowDown") : keys.h["ArrowDown"]) {
+			dir.y = 1;
+		}
+		if(dir.x != 0 || dir.y != 0) {
+			var move = node.entity.get(game_Move);
+			if(move == null) {
+				var from = node.machine.reachedPosition;
+				var to = new game_Coord(from.x + dir.x,from.y + dir.y);
+				move = new game_Move();
+				move.from = from;
+				move.to = to;
+				node.entity.add(move);
+			}
+		}
+		tpos.x = 16 + mpos.x * 32;
+		tpos.y = 16 + mpos.y * 32;
+	}
+	,onNodeAdded: function(node) {
+	}
+	,onNodeRemoved: function(node) {
+	}
+	,__class__: game_MachineSystem
+});
+var game_Move = function() {
+	this.time = 0.0;
+};
+game_Move.__name__ = ["game","Move"];
+game_Move.prototype = {
+	__class__: game_Move
+};
+var game_Tile = function(c,r) {
+	this.col = c;
+	this.row = r;
+};
+game_Tile.__name__ = ["game","Tile"];
+game_Tile.prototype = {
+	__class__: game_Tile
+};
+var game_TileNode = function() { };
+game_TileNode.__name__ = ["game","TileNode"];
+game_TileNode._getComponents = function() {
+	if(game_TileNode._components == null) {
+		game_TileNode._components = new ash_ClassMap();
+		var _this = game_TileNode._components;
+		var k = whiplash_phaser_Transform;
+		var name = Type.getClassName(k);
+		var _this1 = _this.keyMap;
+		if(__map_reserved[name] != null) {
+			_this1.setReserved(name,k);
+		} else {
+			_this1.h[name] = k;
+		}
+		var _this2 = _this.valueMap;
+		if(__map_reserved[name] != null) {
+			_this2.setReserved(name,"transform");
+		} else {
+			_this2.h[name] = "transform";
+		}
+		var _this3 = game_TileNode._components;
+		var k1 = game_Tile;
+		var name1 = Type.getClassName(k1);
+		var _this4 = _this3.keyMap;
+		if(__map_reserved[name1] != null) {
+			_this4.setReserved(name1,k1);
+		} else {
+			_this4.h[name1] = k1;
+		}
+		var _this5 = _this3.valueMap;
+		if(__map_reserved[name1] != null) {
+			_this5.setReserved(name1,"tile");
+		} else {
+			_this5.h[name1] = "tile";
+		}
+	}
+	return game_TileNode._components;
+};
+game_TileNode.__super__ = ash_core_Node;
+game_TileNode.prototype = $extend(ash_core_Node.prototype,{
+	__class__: game_TileNode
+});
+var game_TileSystem = function() {
+	ash_tools_ListIteratingSystem.call(this,game_TileNode,$bind(this,this.updateNode),$bind(this,this.onNodeAdded),$bind(this,this.onNodeRemoved));
+};
+game_TileSystem.__name__ = ["game","TileSystem"];
+game_TileSystem.__super__ = ash_tools_ListIteratingSystem;
+game_TileSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
+	addToEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.addToEngine.call(this,engine);
+		this.engine = engine;
+	}
+	,removeFromEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.removeFromEngine.call(this,engine);
+	}
+	,updateNode: function(node,dt) {
+	}
+	,onNodeAdded: function(node) {
+		var p = node.transform.position;
+		var tile = node.tile;
+		p.x = 16 + tile.col * 32;
+		p.y = 16 + tile.row * 32;
+		game_Game.instance.grid[tile.col][tile.row] = node;
+	}
+	,onNodeRemoved: function(node) {
+	}
+	,__class__: game_TileSystem
+});
 var haxe_ds_IntMap = function() {
 	this.h = { };
 };
@@ -2760,6 +3002,8 @@ var Enum = { };
 var __map_reserved = {};
 ash_core_Entity.nameCount = 0;
 game_AudioManager.sounds = new haxe_ds_StringMap();
+game_Config.width = 320;
+game_Config.height = 240;
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
 whiplash_Input.keys = new haxe_ds_StringMap();

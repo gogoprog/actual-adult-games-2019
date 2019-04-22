@@ -14,14 +14,19 @@ import whiplash.math.*;
 import whiplash.phaser.*;
 import whiplash.common.components.Active;
 
+import game.TileSystem;
+
 class Game {
-    var engine:ash.core.Engine;
+    static public var instance:Game;
+    public var grid:Array<Array<TileNode>>;
+    public var engine:ash.core.Engine;
 
     public function new() {
         new JQuery(window).on("load", function() {
-            whiplash.Lib.init(320, 240, ".root", {preload:preload, create:create, update:update});
+            whiplash.Lib.init(Config.width, Config.height, ".root", {preload:preload, create:create, update:update});
             engine = whiplash.Lib.ashEngine;
         });
+        instance = this;
     }
 
     function preload():Void {
@@ -31,9 +36,17 @@ class Game {
 
     function create():Void {
         var game = whiplash.Lib.phaserGame;
+        game.stage.smoothed = false;
+        game.stage.disableVisibilityChange = true;
         AudioManager.init(game);
         Factory.init(game);
         whiplash.Input.setup(document.querySelector(".hud"));
+
+        createGrid(10, 7);
+        createMachine();
+
+        engine.addSystem(new MachineSystem(), 1);
+        engine.addSystem(new TileSystem(), 1);
     }
 
 
@@ -44,5 +57,24 @@ class Game {
 
     static function main():Void {
         new Game();
+    }
+
+    function createGrid(w, h) {
+        grid = [];
+
+        for(i in 0...w) {
+            grid[i] = [];
+
+            for(j in 0...h) {
+                var e = Factory.createTile(i, j);
+                engine.addEntity(e);
+            }
+        }
+    }
+
+    function createMachine() {
+        var e = Factory.createMachine();
+        var p = e.get(Transform).position;
+        engine.addEntity(e);
     }
 }
