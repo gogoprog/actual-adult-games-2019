@@ -42,11 +42,13 @@ class Game {
         Factory.init(game);
         whiplash.Input.setup(document.querySelector(".hud"));
 
-        createGrid(10, 7);
+        createGrid(Config.cols, Config.rows);
         createMachine();
 
+        engine.addSystem(new ObjectSystem(), 1);
         engine.addSystem(new MachineSystem(), 1);
         engine.addSystem(new TileSystem(), 1);
+        engine.addSystem(new MoveSystem(), 1);
     }
 
 

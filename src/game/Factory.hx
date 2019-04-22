@@ -28,6 +28,7 @@ class Factory {
         e.add(new Sprite("car"));
         e.add(new Transform());
         e.add(new Machine());
+        e.add(new Object());
         e.get(Sprite).anchor.set(0.5, 0.5);
         return e;
     }

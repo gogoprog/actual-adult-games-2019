@@ -7,6 +7,7 @@ import whiplash.phaser.*;
 class MachineNode extends Node<MachineNode> {
     public var transform:Transform;
     public var machine:Machine;
+    public var object:Object;
 }
 
 class MachineSystem extends ListIteratingSystem<MachineNode> {
@@ -26,42 +27,57 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
     }
 
     private function updateNode(node:MachineNode, dt:Float):Void {
-        var tpos = node.transform.position;
-        var mpos = node.machine.position;
+        var machine = node.machine;
+        var transform = node.transform;
+        var tpos = transform.position;
         var keys = whiplash.Input.keys;
         var dir = new Coord(0, 0);
+        var move = node.entity.get(Move);
+
+        if(move == null) {
+            var pos = machine.reachedPosition;
+            pos.x = Std.int(node.object.position.x);
+            pos.y = Std.int(node.object.position.y);
+            var tileNode = Game.instance.grid[pos.x][pos.y];
+            tileNode.sprite.loadTexture("grass-cut");
+        } else {
+            machine.time - 0;
+        }
 
         if(keys["ArrowRight"]) {
             dir.x = 1;
+            transform.rotation = 90;
         }
 
         if(keys["ArrowLeft"]) {
             dir.x = -1;
+            transform.rotation = -90;
         }
 
         if(keys["ArrowUp"]) {
             dir.y = -1;
+            transform.rotation = 0;
         }
 
         if(keys["ArrowDown"]) {
             dir.y = 1;
+            transform.rotation = 180;
         }
 
         if(dir.x != 0 || dir.y != 0) {
-            var move = node.entity.get(Move);
-
             if(move == null) {
-                var from = node.machine.reachedPosition;
+                var from = machine.reachedPosition;
                 var to = new Coord(from.x + dir.x, from.y + dir.y);
-                move = new Move();
-                move.from = from;
-                move.to = to;
-                node.entity.add(move);
+
+                if(to.x >= 0 && to.x < Config.cols && to.y >= 0 && to.y < Config.rows) {
+                    move = new Move();
+                    move.from = from;
+                    move.to = to;
+                    node.entity.add(move);
+                }
             }
         }
 
-        tpos.x = 16 + mpos.x * 32;
-        tpos.y = 16 + mpos.y * 32;
     }
 
     private function onNodeAdded(node:MachineNode) {

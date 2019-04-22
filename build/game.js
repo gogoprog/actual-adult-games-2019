@@ -1324,6 +1324,7 @@ game_Factory.createMachine = function() {
 	e.add(new whiplash_phaser_Sprite("car"));
 	e.add(new whiplash_phaser_Transform());
 	e.add(new game_Machine());
+	e.add(new game_Object());
 	e.get(whiplash_phaser_Sprite).anchor.set(0.5,0.5);
 	return e;
 };
@@ -1351,10 +1352,12 @@ game_Game.prototype = {
 		game_AudioManager.init(game1);
 		game_Factory.init(game1);
 		whiplash_Input.setup(window.document.querySelector(".hud"));
-		this.createGrid(10,7);
+		this.createGrid(game_Config.cols,game_Config.rows);
 		this.createMachine();
+		this.engine.addSystem(new game_ObjectSystem(),1);
 		this.engine.addSystem(new game_MachineSystem(),1);
 		this.engine.addSystem(new game_TileSystem(),1);
+		this.engine.addSystem(new game_MoveSystem(),1);
 	}
 	,update: function() {
 		var dt = whiplash_Lib.getDeltaTime() / 1000;
@@ -1385,8 +1388,6 @@ game_Game.prototype = {
 };
 var game_Machine = function() {
 	this.reachedPosition = new game_Coord(0,0);
-	var this1 = new Phaser.Point(0,0);
-	this.position = this1;
 	this.time = 0.0;
 };
 game_Machine.__name__ = ["game","Machine"];
@@ -1428,6 +1429,21 @@ game_MachineNode._getComponents = function() {
 		} else {
 			_this5.h[name1] = "machine";
 		}
+		var _this6 = game_MachineNode._components;
+		var k2 = game_Object;
+		var name2 = Type.getClassName(k2);
+		var _this7 = _this6.keyMap;
+		if(__map_reserved[name2] != null) {
+			_this7.setReserved(name2,k2);
+		} else {
+			_this7.h[name2] = k2;
+		}
+		var _this8 = _this6.valueMap;
+		if(__map_reserved[name2] != null) {
+			_this8.setReserved(name2,"object");
+		} else {
+			_this8.h[name2] = "object";
+		}
 	}
 	return game_MachineNode._components;
 };
@@ -1449,35 +1465,47 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 		ash_tools_ListIteratingSystem.prototype.removeFromEngine.call(this,engine);
 	}
 	,updateNode: function(node,dt) {
-		var tpos = node.transform.position;
-		var mpos = node.machine.position;
+		var machine = node.machine;
+		var transform = node.transform;
+		var tpos = transform.position;
 		var keys = whiplash_Input.keys;
 		var dir = new game_Coord(0,0);
+		var move = node.entity.get(game_Move);
+		if(move == null) {
+			var pos = machine.reachedPosition;
+			pos.x = node.object.position.x | 0;
+			pos.y = node.object.position.y | 0;
+			var tileNode = game_Game.instance.grid[pos.x][pos.y];
+			tileNode.sprite.loadTexture("grass-cut");
+		}
 		if(__map_reserved["ArrowRight"] != null ? keys.getReserved("ArrowRight") : keys.h["ArrowRight"]) {
 			dir.x = 1;
+			transform.rotation = 90;
 		}
 		if(__map_reserved["ArrowLeft"] != null ? keys.getReserved("ArrowLeft") : keys.h["ArrowLeft"]) {
 			dir.x = -1;
+			transform.rotation = -90;
 		}
 		if(__map_reserved["ArrowUp"] != null ? keys.getReserved("ArrowUp") : keys.h["ArrowUp"]) {
 			dir.y = -1;
+			transform.rotation = 0;
 		}
 		if(__map_reserved["ArrowDown"] != null ? keys.getReserved("ArrowDown") : keys.h["ArrowDown"]) {
 			dir.y = 1;
+			transform.rotation = 180;
 		}
 		if(dir.x != 0 || dir.y != 0) {
-			var move = node.entity.get(game_Move);
 			if(move == null) {
-				var from = node.machine.reachedPosition;
+				var from = machine.reachedPosition;
 				var to = new game_Coord(from.x + dir.x,from.y + dir.y);
-				move = new game_Move();
-				move.from = from;
-				move.to = to;
-				node.entity.add(move);
+				if(to.x >= 0 && to.x < game_Config.cols && to.y >= 0 && to.y < game_Config.rows) {
+					move = new game_Move();
+					move.from = from;
+					move.to = to;
+					node.entity.add(move);
+				}
 			}
 		}
-		tpos.x = 16 + mpos.x * 32;
-		tpos.y = 16 + mpos.y * 32;
 	}
 	,onNodeAdded: function(node) {
 	}
@@ -1486,12 +1514,185 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	,__class__: game_MachineSystem
 });
 var game_Move = function() {
+	this.speed = 5;
 	this.time = 0.0;
 };
 game_Move.__name__ = ["game","Move"];
 game_Move.prototype = {
 	__class__: game_Move
 };
+var game_MoveNode = function() { };
+game_MoveNode.__name__ = ["game","MoveNode"];
+game_MoveNode._getComponents = function() {
+	if(game_MoveNode._components == null) {
+		game_MoveNode._components = new ash_ClassMap();
+		var _this = game_MoveNode._components;
+		var k = whiplash_phaser_Transform;
+		var name = Type.getClassName(k);
+		var _this1 = _this.keyMap;
+		if(__map_reserved[name] != null) {
+			_this1.setReserved(name,k);
+		} else {
+			_this1.h[name] = k;
+		}
+		var _this2 = _this.valueMap;
+		if(__map_reserved[name] != null) {
+			_this2.setReserved(name,"transform");
+		} else {
+			_this2.h[name] = "transform";
+		}
+		var _this3 = game_MoveNode._components;
+		var k1 = game_Move;
+		var name1 = Type.getClassName(k1);
+		var _this4 = _this3.keyMap;
+		if(__map_reserved[name1] != null) {
+			_this4.setReserved(name1,k1);
+		} else {
+			_this4.h[name1] = k1;
+		}
+		var _this5 = _this3.valueMap;
+		if(__map_reserved[name1] != null) {
+			_this5.setReserved(name1,"move");
+		} else {
+			_this5.h[name1] = "move";
+		}
+		var _this6 = game_MoveNode._components;
+		var k2 = game_Object;
+		var name2 = Type.getClassName(k2);
+		var _this7 = _this6.keyMap;
+		if(__map_reserved[name2] != null) {
+			_this7.setReserved(name2,k2);
+		} else {
+			_this7.h[name2] = k2;
+		}
+		var _this8 = _this6.valueMap;
+		if(__map_reserved[name2] != null) {
+			_this8.setReserved(name2,"object");
+		} else {
+			_this8.h[name2] = "object";
+		}
+	}
+	return game_MoveNode._components;
+};
+game_MoveNode.__super__ = ash_core_Node;
+game_MoveNode.prototype = $extend(ash_core_Node.prototype,{
+	__class__: game_MoveNode
+});
+var game_MoveSystem = function() {
+	ash_tools_ListIteratingSystem.call(this,game_MoveNode,$bind(this,this.updateNode),$bind(this,this.onNodeAdded),$bind(this,this.onNodeRemoved));
+};
+game_MoveSystem.__name__ = ["game","MoveSystem"];
+game_MoveSystem.__super__ = ash_tools_ListIteratingSystem;
+game_MoveSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
+	addToEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.addToEngine.call(this,engine);
+		this.engine = engine;
+	}
+	,removeFromEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.removeFromEngine.call(this,engine);
+	}
+	,updateNode: function(node,dt) {
+		var move = node.move;
+		var object = node.object;
+		var duration = 1 / move.speed;
+		var p = object.position;
+		var from = move.from;
+		var to = move.to;
+		move.time += dt;
+		var f = move.time / duration;
+		if(f > 1) {
+			f = 1;
+		}
+		object.position.x = move.from.x + (move.to.x - move.from.x) * f;
+		object.position.y = move.from.y + (move.to.y - move.from.y) * f;
+		if(f == 1) {
+			node.entity.remove(game_Move);
+		}
+	}
+	,onNodeAdded: function(node) {
+		node.move.time = 0;
+		var to = node.move.to;
+	}
+	,onNodeRemoved: function(node) {
+	}
+	,__class__: game_MoveSystem
+});
+var game_Object = function() {
+	var this1 = new Phaser.Point(0,0);
+	this.position = this1;
+	this.time = 0.0;
+};
+game_Object.__name__ = ["game","Object"];
+game_Object.prototype = {
+	__class__: game_Object
+};
+var game_ObjectNode = function() { };
+game_ObjectNode.__name__ = ["game","ObjectNode"];
+game_ObjectNode._getComponents = function() {
+	if(game_ObjectNode._components == null) {
+		game_ObjectNode._components = new ash_ClassMap();
+		var _this = game_ObjectNode._components;
+		var k = whiplash_phaser_Transform;
+		var name = Type.getClassName(k);
+		var _this1 = _this.keyMap;
+		if(__map_reserved[name] != null) {
+			_this1.setReserved(name,k);
+		} else {
+			_this1.h[name] = k;
+		}
+		var _this2 = _this.valueMap;
+		if(__map_reserved[name] != null) {
+			_this2.setReserved(name,"transform");
+		} else {
+			_this2.h[name] = "transform";
+		}
+		var _this3 = game_ObjectNode._components;
+		var k1 = game_Object;
+		var name1 = Type.getClassName(k1);
+		var _this4 = _this3.keyMap;
+		if(__map_reserved[name1] != null) {
+			_this4.setReserved(name1,k1);
+		} else {
+			_this4.h[name1] = k1;
+		}
+		var _this5 = _this3.valueMap;
+		if(__map_reserved[name1] != null) {
+			_this5.setReserved(name1,"object");
+		} else {
+			_this5.h[name1] = "object";
+		}
+	}
+	return game_ObjectNode._components;
+};
+game_ObjectNode.__super__ = ash_core_Node;
+game_ObjectNode.prototype = $extend(ash_core_Node.prototype,{
+	__class__: game_ObjectNode
+});
+var game_ObjectSystem = function() {
+	ash_tools_ListIteratingSystem.call(this,game_ObjectNode,$bind(this,this.updateNode),$bind(this,this.onNodeAdded),$bind(this,this.onNodeRemoved));
+};
+game_ObjectSystem.__name__ = ["game","ObjectSystem"];
+game_ObjectSystem.__super__ = ash_tools_ListIteratingSystem;
+game_ObjectSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
+	addToEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.addToEngine.call(this,engine);
+		this.engine = engine;
+	}
+	,removeFromEngine: function(engine) {
+		ash_tools_ListIteratingSystem.prototype.removeFromEngine.call(this,engine);
+	}
+	,updateNode: function(node,dt) {
+		var tpos = node.transform.position;
+		var opos = node.object.position;
+		tpos.x = 16 + opos.x * 32;
+		tpos.y = 16 + opos.y * 32;
+	}
+	,onNodeAdded: function(node) {
+	}
+	,onNodeRemoved: function(node) {
+	}
+	,__class__: game_ObjectSystem
+});
 var game_Tile = function(c,r) {
 	this.col = c;
 	this.row = r;
@@ -1534,6 +1735,21 @@ game_TileNode._getComponents = function() {
 			_this5.setReserved(name1,"tile");
 		} else {
 			_this5.h[name1] = "tile";
+		}
+		var _this6 = game_TileNode._components;
+		var k2 = whiplash_phaser_Sprite;
+		var name2 = Type.getClassName(k2);
+		var _this7 = _this6.keyMap;
+		if(__map_reserved[name2] != null) {
+			_this7.setReserved(name2,k2);
+		} else {
+			_this7.h[name2] = k2;
+		}
+		var _this8 = _this6.valueMap;
+		if(__map_reserved[name2] != null) {
+			_this8.setReserved(name2,"sprite");
+		} else {
+			_this8.h[name2] = "sprite";
 		}
 	}
 	return game_TileNode._components;
@@ -3004,6 +3220,8 @@ ash_core_Entity.nameCount = 0;
 game_AudioManager.sounds = new haxe_ds_StringMap();
 game_Config.width = 320;
 game_Config.height = 240;
+game_Config.rows = 7;
+game_Config.cols = 10;
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
 whiplash_Input.keys = new haxe_ds_StringMap();

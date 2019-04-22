@@ -7,6 +7,7 @@ import whiplash.phaser.*;
 class TileNode extends Node<TileNode> {
     public var transform:Transform;
     public var tile:Tile;
+    public var sprite:Sprite;
 }
 
 class TileSystem extends ListIteratingSystem<TileNode> {
