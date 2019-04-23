@@ -47,19 +47,13 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
         if(keys["ArrowRight"]) {
             dir.x = 1;
             transform.rotation = 90;
-        }
-
-        if(keys["ArrowLeft"]) {
+        } else if(keys["ArrowLeft"]) {
             dir.x = -1;
             transform.rotation = -90;
-        }
-
-        if(keys["ArrowUp"]) {
+        } else if(keys["ArrowUp"]) {
             dir.y = -1;
             transform.rotation = 0;
-        }
-
-        if(keys["ArrowDown"]) {
+        } else if(keys["ArrowDown"]) {
             dir.y = 1;
             transform.rotation = 180;
         }

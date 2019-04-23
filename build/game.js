@@ -1481,16 +1481,13 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 		if(__map_reserved["ArrowRight"] != null ? keys.getReserved("ArrowRight") : keys.h["ArrowRight"]) {
 			dir.x = 1;
 			transform.rotation = 90;
-		}
-		if(__map_reserved["ArrowLeft"] != null ? keys.getReserved("ArrowLeft") : keys.h["ArrowLeft"]) {
+		} else if(__map_reserved["ArrowLeft"] != null ? keys.getReserved("ArrowLeft") : keys.h["ArrowLeft"]) {
 			dir.x = -1;
 			transform.rotation = -90;
-		}
-		if(__map_reserved["ArrowUp"] != null ? keys.getReserved("ArrowUp") : keys.h["ArrowUp"]) {
+		} else if(__map_reserved["ArrowUp"] != null ? keys.getReserved("ArrowUp") : keys.h["ArrowUp"]) {
 			dir.y = -1;
 			transform.rotation = 0;
-		}
-		if(__map_reserved["ArrowDown"] != null ? keys.getReserved("ArrowDown") : keys.h["ArrowDown"]) {
+		} else if(__map_reserved["ArrowDown"] != null ? keys.getReserved("ArrowDown") : keys.h["ArrowDown"]) {
 			dir.y = 1;
 			transform.rotation = 180;
 		}
