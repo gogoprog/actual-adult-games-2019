@@ -1308,6 +1308,7 @@ game_Factory.preload = function(game1) {
 	game1.load.image("car","../data/textures/car.png");
 	game1.load.image("grass","../data/textures/grass.png");
 	game1.load.image("grass-cut","../data/textures/grass-cut.png");
+	game1.load.image("particle","../data/textures/particle.png");
 };
 game_Factory.init = function(game1) {
 };
@@ -1328,6 +1329,16 @@ game_Factory.createMachine = function() {
 	e.add(new game_Machine());
 	e.add(new game_Object());
 	e.get(whiplash_phaser_Sprite).anchor.set(0.5,0.5);
+	return e;
+};
+game_Factory.createGrassParticles = function() {
+	var e = new ash_core_Entity();
+	e.add(new whiplash_phaser_Transform());
+	var emitter = new whiplash_phaser_Emitter(32);
+	e.add(emitter);
+	emitter.makeParticles("particle");
+	var this1 = new Phaser.Point(0,0);
+	emitter.gravity = this1;
 	return e;
 };
 var game_Game = function() {
@@ -1367,17 +1378,20 @@ game_Game.prototype = {
 	}
 	,createGrid: function(w,h) {
 		this.grid = [];
+		this.cutGrid = [];
 		var _g1 = 0;
 		var _g = w;
 		while(_g1 < _g) {
 			var i = _g1++;
 			this.grid[i] = [];
+			this.cutGrid[i] = [];
 			var _g3 = 0;
 			var _g2 = h;
 			while(_g3 < _g2) {
 				var j = _g3++;
 				var e = game_Factory.createTile(i,j);
 				this.engine.addEntity(e);
+				this.cutGrid[i][j] = false;
 			}
 		}
 	}
@@ -1478,7 +1492,15 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 			pos.x = node.object.position.x | 0;
 			pos.y = node.object.position.y | 0;
 			var tileNode = game_Game.instance.grid[pos.x][pos.y];
-			tileNode.sprite.loadTexture("grass-cut");
+			var isCut = game_Game.instance.cutGrid[pos.x][pos.y];
+			if(!isCut) {
+				tileNode.sprite.loadTexture("grass-cut");
+				var e = game_Factory.createGrassParticles();
+				e.get(whiplash_phaser_Transform).position.set(tpos.x,tpos.y);
+				e.get(whiplash_phaser_Emitter).start(true,2000,null,10);
+				this.engine.addEntity(e);
+				game_Game.instance.cutGrid[pos.x][pos.y] = true;
+			}
 		}
 		if(__map_reserved["ArrowRight"] != null ? keys.getReserved("ArrowRight") : keys.h["ArrowRight"]) {
 			dir.x = 1;

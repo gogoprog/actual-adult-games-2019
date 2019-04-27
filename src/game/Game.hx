@@ -19,6 +19,7 @@ import game.TileSystem;
 class Game {
     static public var instance:Game;
     public var grid:Array<Array<TileNode>>;
+    public var cutGrid:Array<Array<Bool>>;
     public var engine:ash.core.Engine;
 
     public function new() {
@@ -63,13 +64,17 @@ class Game {
 
     function createGrid(w, h) {
         grid = [];
+        cutGrid = [];
 
         for(i in 0...w) {
             grid[i] = [];
+            cutGrid[i] = [];
 
             for(j in 0...h) {
                 var e = Factory.createTile(i, j);
                 engine.addEntity(e);
+
+                cutGrid[i][j] = false;
             }
         }
     }
