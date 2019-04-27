@@ -28,17 +28,31 @@ class MoveSystem extends ListIteratingSystem<MoveNode> {
 
     private function updateNode(node:MoveNode, dt:Float):Void {
         var move = node.move;
+
+        move.time += dt;
+
+        apply(node);
+    }
+
+    private function onNodeAdded(node:MoveNode) {
+        node.move.time = node.object.nextMoveTime;
+        apply(node);
+    }
+
+    private function onNodeRemoved(node:MoveNode) {
+    }
+
+    private function apply(node:MoveNode) {
+        var move = node.move;
         var object = node.object;
         var duration = 1 / move.speed;
         var p = object.position;
         var from = move.from;
         var to = move.to;
-
-        move.time += dt;
-
         var f = move.time / duration;
 
         if(f > 1) {
+            object.nextMoveTime = move.time - duration;
             f = 1;
         }
 
@@ -48,14 +62,6 @@ class MoveSystem extends ListIteratingSystem<MoveNode> {
         if(f == 1) {
             node.entity.remove(Move);
         }
-    }
-
-    private function onNodeAdded(node:MoveNode) {
-        node.move.time = 0;
-        var to = node.move.to;
-    }
-
-    private function onNodeRemoved(node:MoveNode) {
     }
 }
 

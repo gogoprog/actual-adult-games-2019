@@ -1356,10 +1356,10 @@ game_Game.prototype = {
 		whiplash_Input.setup(window.document.querySelector(".hud"));
 		this.createGrid(game_Config.cols,game_Config.rows);
 		this.createMachine();
-		this.engine.addSystem(new game_ObjectSystem(),1);
-		this.engine.addSystem(new game_MachineSystem(),1);
 		this.engine.addSystem(new game_TileSystem(),1);
 		this.engine.addSystem(new game_MoveSystem(),1);
+		this.engine.addSystem(new game_MachineSystem(),2);
+		this.engine.addSystem(new game_ObjectSystem(),3);
 	}
 	,update: function() {
 		var dt = whiplash_Lib.getDeltaTime() / 1000;
@@ -1513,7 +1513,7 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	,__class__: game_MachineSystem
 });
 var game_Move = function() {
-	this.speed = 5;
+	this.speed = 10;
 	this.time = 0.0;
 };
 game_Move.__name__ = ["game","Move"];
@@ -1592,14 +1592,25 @@ game_MoveSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	}
 	,updateNode: function(node,dt) {
 		var move = node.move;
+		move.time += dt;
+		this.apply(node);
+	}
+	,onNodeAdded: function(node) {
+		node.move.time = node.object.nextMoveTime;
+		this.apply(node);
+	}
+	,onNodeRemoved: function(node) {
+	}
+	,apply: function(node) {
+		var move = node.move;
 		var object = node.object;
 		var duration = 1 / move.speed;
 		var p = object.position;
 		var from = move.from;
 		var to = move.to;
-		move.time += dt;
 		var f = move.time / duration;
 		if(f > 1) {
+			object.nextMoveTime = move.time - duration;
 			f = 1;
 		}
 		object.position.x = move.from.x + (move.to.x - move.from.x) * f;
@@ -1608,15 +1619,10 @@ game_MoveSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 			node.entity.remove(game_Move);
 		}
 	}
-	,onNodeAdded: function(node) {
-		node.move.time = 0;
-		var to = node.move.to;
-	}
-	,onNodeRemoved: function(node) {
-	}
 	,__class__: game_MoveSystem
 });
 var game_Object = function() {
+	this.nextMoveTime = 0;
 	var this1 = new Phaser.Point(0,0);
 	this.position = this1;
 	this.time = 0.0;
@@ -1685,6 +1691,7 @@ game_ObjectSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 		var opos = node.object.position;
 		tpos.x = game_Config.tileSize / 2 + opos.x * game_Config.tileSize;
 		tpos.y = game_Config.tileSize / 2 + opos.y * game_Config.tileSize;
+		node.object.nextMoveTime = 0;
 	}
 	,onNodeAdded: function(node) {
 	}

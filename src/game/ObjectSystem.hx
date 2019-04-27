@@ -30,6 +30,8 @@ class ObjectSystem extends ListIteratingSystem<ObjectNode> {
         var opos = node.object.position;
         tpos.x = Config.tileSize/2 + opos.x * Config.tileSize;
         tpos.y = Config.tileSize/2 + opos.y * Config.tileSize;
+
+        node.object.nextMoveTime = 0;
     }
 
     private function onNodeAdded(node:ObjectNode) {

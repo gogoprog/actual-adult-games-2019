@@ -45,10 +45,10 @@ class Game {
         createGrid(Config.cols, Config.rows);
         createMachine();
 
-        engine.addSystem(new ObjectSystem(), 1);
-        engine.addSystem(new MachineSystem(), 1);
         engine.addSystem(new TileSystem(), 1);
         engine.addSystem(new MoveSystem(), 1);
+        engine.addSystem(new MachineSystem(), 2);
+        engine.addSystem(new ObjectSystem(), 3);
     }
 
 
