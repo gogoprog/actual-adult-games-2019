@@ -1317,6 +1317,8 @@ game_Factory.createTile = function(i,j) {
 	e.add(new whiplash_phaser_Transform());
 	e.add(new game_Tile(i,j));
 	e.get(whiplash_phaser_Sprite).anchor.set(0.5,0.5);
+	var s = game_Config.tileSize / 32;
+	e.get(whiplash_phaser_Transform).scale.set(s,s);
 	return e;
 };
 game_Factory.createMachine = function() {
@@ -1681,8 +1683,8 @@ game_ObjectSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	,updateNode: function(node,dt) {
 		var tpos = node.transform.position;
 		var opos = node.object.position;
-		tpos.x = 16 + opos.x * 32;
-		tpos.y = 16 + opos.y * 32;
+		tpos.x = game_Config.tileSize / 2 + opos.x * game_Config.tileSize;
+		tpos.y = game_Config.tileSize / 2 + opos.y * game_Config.tileSize;
 	}
 	,onNodeAdded: function(node) {
 	}
@@ -1773,8 +1775,8 @@ game_TileSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	,onNodeAdded: function(node) {
 		var p = node.transform.position;
 		var tile = node.tile;
-		p.x = 16 + tile.col * 32;
-		p.y = 16 + tile.row * 32;
+		p.x = game_Config.tileSize / 2 + tile.col * game_Config.tileSize;
+		p.y = game_Config.tileSize / 2 + tile.row * game_Config.tileSize;
 		game_Game.instance.grid[tile.col][tile.row] = node;
 	}
 	,onNodeRemoved: function(node) {
@@ -2386,6 +2388,7 @@ whiplash_Lib.init = function(width,height,parent,callbacks,options,systemsPriori
 	whiplash_Lib.ashEngine.addSystem(new whiplash_phaser_TextSystem(whiplash_Lib.phaserGame),systemsPriority);
 	whiplash_Lib.ashEngine.addSystem(new whiplash_phaser_BitmapTextSystem(whiplash_Lib.phaserGame),systemsPriority);
 	whiplash_Lib.ashEngine.addSystem(new whiplash_phaser_GraphicsSystem(whiplash_Lib.phaserGame),systemsPriority);
+	whiplash_Lib.ashEngine.addSystem(new whiplash_phaser_EmitterSystem(whiplash_Lib.phaserGame),systemsPriority);
 };
 var whiplash_common_components_Active = function() {
 };
@@ -2568,6 +2571,105 @@ whiplash_phaser_BitmapTextSystem.prototype = $extend(ash_tools_ListIteratingSyst
 		sprite.angle = transform.rotation;
 	}
 	,__class__: whiplash_phaser_BitmapTextSystem
+});
+var whiplash_phaser_Emitter = function(maxParticles) {
+	Phaser.Particles.Arcade.Emitter.call(this,whiplash_Lib.phaserGame,0,0,maxParticles);
+	whiplash_Lib.phaserGame.add.existing(this);
+	this.kill();
+};
+whiplash_phaser_Emitter.__name__ = ["whiplash","phaser","Emitter"];
+whiplash_phaser_Emitter.__super__ = Phaser.Particles.Arcade.Emitter;
+whiplash_phaser_Emitter.prototype = $extend(Phaser.Particles.Arcade.Emitter.prototype,{
+	__class__: whiplash_phaser_Emitter
+});
+var whiplash_phaser_EmitterNode = function() { };
+whiplash_phaser_EmitterNode.__name__ = ["whiplash","phaser","EmitterNode"];
+whiplash_phaser_EmitterNode._getComponents = function() {
+	if(whiplash_phaser_EmitterNode._components == null) {
+		whiplash_phaser_EmitterNode._components = new ash_ClassMap();
+		var _this = whiplash_phaser_EmitterNode._components;
+		var k = whiplash_phaser_Transform;
+		var name = Type.getClassName(k);
+		var _this1 = _this.keyMap;
+		if(__map_reserved[name] != null) {
+			_this1.setReserved(name,k);
+		} else {
+			_this1.h[name] = k;
+		}
+		var _this2 = _this.valueMap;
+		if(__map_reserved[name] != null) {
+			_this2.setReserved(name,"transform");
+		} else {
+			_this2.h[name] = "transform";
+		}
+		var _this3 = whiplash_phaser_EmitterNode._components;
+		var k1 = whiplash_phaser_Emitter;
+		var name1 = Type.getClassName(k1);
+		var _this4 = _this3.keyMap;
+		if(__map_reserved[name1] != null) {
+			_this4.setReserved(name1,k1);
+		} else {
+			_this4.h[name1] = k1;
+		}
+		var _this5 = _this3.valueMap;
+		if(__map_reserved[name1] != null) {
+			_this5.setReserved(name1,"emitter");
+		} else {
+			_this5.h[name1] = "emitter";
+		}
+	}
+	return whiplash_phaser_EmitterNode._components;
+};
+whiplash_phaser_EmitterNode.__super__ = ash_core_Node;
+whiplash_phaser_EmitterNode.prototype = $extend(ash_core_Node.prototype,{
+	__class__: whiplash_phaser_EmitterNode
+});
+var whiplash_phaser_EmitterSystem = function(game) {
+	ash_tools_ListIteratingSystem.call(this,whiplash_phaser_EmitterNode,$bind(this,this.updateNode),$bind(this,this.onNodeAdded),$bind(this,this.onNodeRemoved));
+	this.game = game;
+};
+whiplash_phaser_EmitterSystem.__name__ = ["whiplash","phaser","EmitterSystem"];
+whiplash_phaser_EmitterSystem.__super__ = ash_tools_ListIteratingSystem;
+whiplash_phaser_EmitterSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
+	updateNode: function(node,dt) {
+		var transform = node.transform;
+		var position = transform.position;
+		var scale = transform.scale;
+		var emitter = node.emitter;
+		emitter.position.x = position.x;
+		emitter.position.y = position.y;
+		emitter.scale.x = scale.x;
+		emitter.scale.y = scale.y;
+		emitter.angle = transform.rotation;
+	}
+	,onNodeAdded: function(node) {
+		var transform = node.transform;
+		var position = transform.position;
+		var scale = transform.scale;
+		var emitter = node.emitter;
+		emitter.position.x = position.x;
+		emitter.position.y = position.y;
+		emitter.scale.x = scale.x;
+		emitter.scale.y = scale.y;
+		emitter.angle = transform.rotation;
+		node.emitter.revive();
+	}
+	,onNodeRemoved: function(node) {
+		node.emitter.destroy();
+		node.emitter.kill();
+	}
+	,apply: function(node) {
+		var transform = node.transform;
+		var position = transform.position;
+		var scale = transform.scale;
+		var emitter = node.emitter;
+		emitter.position.x = position.x;
+		emitter.position.y = position.y;
+		emitter.scale.x = scale.x;
+		emitter.scale.y = scale.y;
+		emitter.angle = transform.rotation;
+	}
+	,__class__: whiplash_phaser_EmitterSystem
 });
 var whiplash_phaser_Graphics = function() {
 	Phaser.Graphics.call(this,whiplash_Lib.phaserGame,0,0);
@@ -3217,8 +3319,9 @@ ash_core_Entity.nameCount = 0;
 game_AudioManager.sounds = new haxe_ds_StringMap();
 game_Config.width = 320;
 game_Config.height = 240;
-game_Config.rows = 7;
-game_Config.cols = 10;
+game_Config.rows = 15;
+game_Config.cols = 20;
+game_Config.tileSize = 16;
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
 whiplash_Input.keys = new haxe_ds_StringMap();

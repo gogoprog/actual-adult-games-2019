@@ -20,6 +20,8 @@ class Factory {
         e.add(new Transform());
         e.add(new Tile(i, j));
         e.get(Sprite).anchor.set(0.5, 0.5);
+        var s = Config.tileSize / 32;
+        e.get(Transform).scale.set(s, s);
         return e;
     }
 

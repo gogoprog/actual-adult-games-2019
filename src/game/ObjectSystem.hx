@@ -28,8 +28,8 @@ class ObjectSystem extends ListIteratingSystem<ObjectNode> {
     private function updateNode(node:ObjectNode, dt:Float):Void {
         var tpos = node.transform.position;
         var opos = node.object.position;
-        tpos.x = 16 + opos.x * 32;
-        tpos.y = 16 + opos.y * 32;
+        tpos.x = Config.tileSize/2 + opos.x * Config.tileSize;
+        tpos.y = Config.tileSize/2 + opos.y * Config.tileSize;
     }
 
     private function onNodeAdded(node:ObjectNode) {
