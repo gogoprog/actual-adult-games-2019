@@ -50,6 +50,7 @@ class Game {
         engine.addSystem(new MoveSystem(), 1);
         engine.addSystem(new MachineSystem(), 2);
         engine.addSystem(new ObjectSystem(), 3);
+        engine.addSystem(new AutoRemoveSystem(), 4);
     }
 
 

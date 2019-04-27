@@ -40,11 +40,10 @@ class Factory {
     static public function createGrassParticles() {
         var e = new Entity();
         e.add(new Transform());
-        // e.add(new AutoRemove(0.9));
+        e.add(new AutoRemove(0.9));
         var emitter = new Emitter(32);
         e.add(emitter);
         emitter.makeParticles("particle");
-        // emitter.setAlpha(1, 0, 1000);
         emitter.gravity = new Point(0,0);
         return e;
     }
