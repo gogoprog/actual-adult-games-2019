@@ -8,6 +8,18 @@ function $extend(from, fields) {
 }
 var HxOverrides = function() { };
 HxOverrides.__name__ = ["HxOverrides"];
+HxOverrides.substr = function(s,pos,len) {
+	if(len == null) {
+		len = s.length;
+	} else if(len < 0) {
+		if(pos == 0) {
+			len = s.length + len;
+		} else {
+			return "";
+		}
+	}
+	return s.substr(pos,len);
+};
 HxOverrides.iter = function(a) {
 	return { cur : 0, arr : a, hasNext : function() {
 		return this.cur < this.arr.length;
@@ -907,6 +919,196 @@ ash_core_SystemList.prototype = {
 	}
 	,__class__: ash_core_SystemList
 };
+var ash_fsm_ISystemProvider = function() { };
+ash_fsm_ISystemProvider.__name__ = ["ash","fsm","ISystemProvider"];
+ash_fsm_ISystemProvider.prototype = {
+	__class__: ash_fsm_ISystemProvider
+};
+var ash_fsm_DynamicSystemProvider = function(method) {
+	this.method = method;
+};
+ash_fsm_DynamicSystemProvider.__name__ = ["ash","fsm","DynamicSystemProvider"];
+ash_fsm_DynamicSystemProvider.__interfaces__ = [ash_fsm_ISystemProvider];
+ash_fsm_DynamicSystemProvider.prototype = {
+	getSystem: function() {
+		return this.method();
+	}
+	,get_identifier: function() {
+		return this.method;
+	}
+	,get_priority: function() {
+		return this.priority;
+	}
+	,set_priority: function(value) {
+		return this.priority = value;
+	}
+	,__class__: ash_fsm_DynamicSystemProvider
+};
+var ash_fsm_EngineState = function() {
+	this.providers = [];
+};
+ash_fsm_EngineState.__name__ = ["ash","fsm","EngineState"];
+ash_fsm_EngineState.prototype = {
+	addInstance: function(system) {
+		return this.addProvider(new ash_fsm_SystemInstanceProvider(system));
+	}
+	,addSingleton: function(type) {
+		return this.addProvider(new ash_fsm_SystemSingletonProvider(type));
+	}
+	,addMethod: function(method) {
+		return this.addProvider(new ash_fsm_DynamicSystemProvider(method));
+	}
+	,addProvider: function(provider) {
+		var mapping = new ash_fsm_StateSystemMapping(this,provider);
+		this.providers.push(provider);
+		return mapping;
+	}
+	,__class__: ash_fsm_EngineState
+};
+var ash_fsm_EngineStateMachine = function(engine) {
+	this.engine = engine;
+	this.states = new haxe_ds_StringMap();
+};
+ash_fsm_EngineStateMachine.__name__ = ["ash","fsm","EngineStateMachine"];
+ash_fsm_EngineStateMachine.prototype = {
+	hasState: function(name) {
+		var _this = this.states;
+		if(__map_reserved[name] != null) {
+			return _this.existsReserved(name);
+		} else {
+			return _this.h.hasOwnProperty(name);
+		}
+	}
+	,addState: function(name,state) {
+		var _this = this.states;
+		if(__map_reserved[name] != null) {
+			_this.setReserved(name,state);
+		} else {
+			_this.h[name] = state;
+		}
+		return this;
+	}
+	,createState: function(name) {
+		var state = new ash_fsm_EngineState();
+		var _this = this.states;
+		if(__map_reserved[name] != null) {
+			_this.setReserved(name,state);
+		} else {
+			_this.h[name] = state;
+		}
+		return state;
+	}
+	,changeState: function(name) {
+		var _this = this.states;
+		var newState = __map_reserved[name] != null ? _this.getReserved(name) : _this.h[name];
+		if(newState == null) {
+			throw new js__$Boot_HaxeError("Engine state " + name + " doesn't exist");
+		}
+		if(newState == this.currentState) {
+			newState = null;
+			return;
+		}
+		var toAdd = new haxe_ds_ObjectMap();
+		var id;
+		var _g = 0;
+		var _g1 = newState.providers;
+		while(_g < _g1.length) {
+			var provider = _g1[_g];
+			++_g;
+			id = provider.get_identifier();
+			toAdd.set(id,provider);
+		}
+		if(this.currentState != null) {
+			var _g2 = 0;
+			var _g11 = this.currentState.providers;
+			while(_g2 < _g11.length) {
+				var provider1 = _g11[_g2];
+				++_g2;
+				id = provider1.get_identifier();
+				var other = toAdd.h[id.__id__];
+				if(other != null) {
+					toAdd.remove(id);
+				} else {
+					this.engine.removeSystem(provider1.getSystem());
+				}
+			}
+		}
+		var provider2 = toAdd.iterator();
+		while(provider2.hasNext()) {
+			var provider3 = provider2.next();
+			this.engine.addSystem(provider3.getSystem(),provider3.priority);
+		}
+		this.currentState = newState;
+	}
+	,__class__: ash_fsm_EngineStateMachine
+};
+var ash_fsm_StateSystemMapping = function(creatingState,provider) {
+	this.creatingState = creatingState;
+	this.provider = provider;
+};
+ash_fsm_StateSystemMapping.__name__ = ["ash","fsm","StateSystemMapping"];
+ash_fsm_StateSystemMapping.prototype = {
+	withPriority: function(priority) {
+		this.provider.set_priority(priority);
+		return this;
+	}
+	,addInstance: function(system) {
+		return this.creatingState.addProvider(new ash_fsm_SystemInstanceProvider(system));
+	}
+	,addSingleton: function(type) {
+		return this.creatingState.addSingleton(type);
+	}
+	,addMethod: function(method) {
+		return this.creatingState.addMethod(method);
+	}
+	,addProvider: function(provider) {
+		return this.creatingState.addProvider(provider);
+	}
+	,__class__: ash_fsm_StateSystemMapping
+};
+var ash_fsm_SystemInstanceProvider = function(instance) {
+	this.instance = instance;
+};
+ash_fsm_SystemInstanceProvider.__name__ = ["ash","fsm","SystemInstanceProvider"];
+ash_fsm_SystemInstanceProvider.__interfaces__ = [ash_fsm_ISystemProvider];
+ash_fsm_SystemInstanceProvider.prototype = {
+	getSystem: function() {
+		return this.instance;
+	}
+	,get_identifier: function() {
+		return this.instance;
+	}
+	,get_priority: function() {
+		return this.priority;
+	}
+	,set_priority: function(value) {
+		return this.priority = value;
+	}
+	,__class__: ash_fsm_SystemInstanceProvider
+};
+var ash_fsm_SystemSingletonProvider = function(type) {
+	this.componentType = type;
+};
+ash_fsm_SystemSingletonProvider.__name__ = ["ash","fsm","SystemSingletonProvider"];
+ash_fsm_SystemSingletonProvider.__interfaces__ = [ash_fsm_ISystemProvider];
+ash_fsm_SystemSingletonProvider.prototype = {
+	getSystem: function() {
+		if(this.instance == null) {
+			this.instance = Type.createInstance(this.componentType,[]);
+		}
+		return this.instance;
+	}
+	,get_identifier: function() {
+		return this.getSystem();
+	}
+	,get_priority: function() {
+		return this.priority;
+	}
+	,set_priority: function(value) {
+		return this.priority = value;
+	}
+	,__class__: ash_fsm_SystemSingletonProvider
+};
 var ash_signals_ListenerNode = function() {
 };
 ash_signals_ListenerNode.__name__ = ["ash","signals","ListenerNode"];
@@ -1246,52 +1448,6 @@ ash_tools_ListIteratingSystem.prototype = $extend(ash_core_System.prototype,{
 	}
 	,__class__: ash_tools_ListIteratingSystem
 });
-var game_AudioManager = function() { };
-game_AudioManager.__name__ = ["game","AudioManager"];
-game_AudioManager.preload = function(game1) {
-	var name = game_AudioManager.sounds.keys();
-	while(name.hasNext()) {
-		var name1 = name.next();
-		game1.load.audio(name1,"../data/audio/" + name1 + ".ogg");
-	}
-};
-game_AudioManager.init = function(game1) {
-	var name = game_AudioManager.sounds.keys();
-	while(name.hasNext()) {
-		var name1 = name.next();
-		var this1 = game_AudioManager.sounds;
-		var v = game1.add.audio(name1);
-		var _this = this1;
-		var value = v;
-		if(__map_reserved[name1] != null) {
-			_this.setReserved(name1,value);
-		} else {
-			_this.h[name1] = value;
-		}
-	}
-};
-game_AudioManager.playSound = function(name) {
-	var _this = game_AudioManager.sounds;
-	if(!(__map_reserved[name] != null ? _this.existsReserved(name) : _this.h.hasOwnProperty(name))) {
-		console.log("Unknown sound: " + name);
-		return;
-	}
-	var _this1 = game_AudioManager.sounds;
-	(__map_reserved[name] != null ? _this1.getReserved(name) : _this1.h[name]).play();
-};
-game_AudioManager.playMusic = function(name) {
-	var _this = game_AudioManager.sounds;
-	if((__map_reserved[name] != null ? _this.getReserved(name) : _this.h[name]) == game_AudioManager.music) {
-		return;
-	}
-	if(game_AudioManager.music != null) {
-		game_AudioManager.music.stop();
-	}
-	var _this1 = game_AudioManager.sounds;
-	(__map_reserved[name] != null ? _this1.getReserved(name) : _this1.h[name]).play("",0,0.5,true);
-	var _this2 = game_AudioManager.sounds;
-	game_AudioManager.music = __map_reserved[name] != null ? _this2.getReserved(name) : _this2.h[name];
-};
 var game_AutoRemove = function(d) {
 	this.time = 0.0;
 	this.duration = d;
@@ -1419,28 +1575,124 @@ game_Factory.createGrassParticles = function() {
 	emitter.gravity = this1;
 	return e;
 };
-var game_Game = function() {
+var whiplash_Application = function(width,height,parent,whiplash_options) {
+	if(whiplash_options == null) {
+		whiplash_options = 3;
+	}
+	if(parent == null) {
+		parent = "body";
+	}
+	if(height == null) {
+		height = 600;
+	}
+	if(width == null) {
+		width = 800;
+	}
+	this.timeFactor = 1;
 	var _gthis = this;
 	$(window).on("load",null,function() {
-		whiplash_Lib.init(game_Config.width,game_Config.height,".root",{ preload : $bind(_gthis,_gthis.preload), create : $bind(_gthis,_gthis.create), update : $bind(_gthis,_gthis.update)});
+		whiplash_Lib.init(width,height,parent,{ preload : $bind(_gthis,_gthis.preload), create : $bind(_gthis,_gthis.create), update : $bind(_gthis,_gthis.update)},whiplash_options);
+		_gthis.uiEngine = new ash_core_Engine();
 		_gthis.engine = whiplash_Lib.ashEngine;
+		_gthis.game = whiplash_Lib.phaserGame;
+		_gthis.esm = new ash_fsm_EngineStateMachine(_gthis.engine);
+		_gthis.ingameEsm = new ash_fsm_EngineStateMachine(_gthis.engine);
+		_gthis.uiEsm = new ash_fsm_EngineStateMachine(_gthis.uiEngine);
+		_gthis.statePageMap = new haxe_ds_StringMap();
+		_gthis.onGuiLoaded();
 	});
+};
+whiplash_Application.__name__ = ["whiplash","Application"];
+whiplash_Application.prototype = {
+	preload: function() {
+		whiplash_DataManager.preload(this.game);
+	}
+	,create: function() {
+		whiplash_AudioManager.init(this.game);
+	}
+	,update: function() {
+		var t = this.game.time.elapsed / 1000;
+		t *= this.timeFactor;
+		this.engine.update(t);
+		this.uiEngine.update(t);
+	}
+	,createState: function(name) {
+		var state = new ash_fsm_EngineState();
+		this.esm.addState(name,state);
+		return state;
+	}
+	,createIngameState: function(name) {
+		var state = new ash_fsm_EngineState();
+		this.ingameEsm.addState(name,state);
+		return state;
+	}
+	,createUiState: function(name,page) {
+		var state = new ash_fsm_EngineState();
+		this.uiEsm.addState(name,state);
+		if(page != null) {
+			var _this = this.statePageMap;
+			if(__map_reserved[name] != null) {
+				_this.setReserved(name,page);
+			} else {
+				_this.h[name] = page;
+			}
+		}
+		return state;
+	}
+	,onResize: function() {
+	}
+	,onGuiLoaded: function() {
+		this.pages = js_uipages_Lib.createGroup($(".pages"));
+		this.pages.showPage(".default");
+		this.onResize();
+	}
+	,changeState: function(stateName) {
+		var _gthis = this;
+		this.engine.updateComplete.addOnce(function() {
+			_gthis.esm.changeState(stateName);
+		});
+	}
+	,changeIngameState: function(stateName) {
+		var _gthis = this;
+		this.engine.updateComplete.addOnce(function() {
+			_gthis.ingameEsm.changeState(stateName);
+		});
+	}
+	,changeUiState: function(stateName) {
+		var _gthis = this;
+		this.uiEngine.updateComplete.addOnce(function() {
+			_gthis.uiEsm.changeState(stateName);
+			var _this = _gthis.statePageMap;
+			var pageName = __map_reserved[stateName] != null ? _this.getReserved(stateName) : _this.h[stateName];
+			if(pageName != null) {
+				_gthis.pages.showPage(pageName);
+			}
+		});
+	}
+	,delay: function(func,time_s) {
+		haxe_Timer.delay(func,time_s * 1000 / this.timeFactor | 0);
+	}
+	,__class__: whiplash_Application
+};
+var game_Game = function() {
+	whiplash_Application.call(this,game_Config.width,game_Config.height,".root");
 	game_Game.instance = this;
 };
 game_Game.__name__ = ["game","Game"];
 game_Game.main = function() {
 	new game_Game();
 };
-game_Game.prototype = {
+game_Game.__super__ = whiplash_Application;
+game_Game.prototype = $extend(whiplash_Application.prototype,{
 	preload: function() {
-		game_AudioManager.preload(whiplash_Lib.phaserGame);
+		whiplash_Application.prototype.preload.call(this);
 		game_Factory.preload(whiplash_Lib.phaserGame);
 	}
 	,create: function() {
 		var game1 = whiplash_Lib.phaserGame;
 		game1.stage.smoothed = false;
 		game1.stage.disableVisibilityChange = true;
-		game_AudioManager.init(game1);
+		whiplash_AudioManager.init(game1);
 		game_Factory.init(game1);
 		whiplash_Input.setup(window.document.querySelector(".hud"));
 		this.createGrid(game_Config.cols,game_Config.rows);
@@ -1450,10 +1702,6 @@ game_Game.prototype = {
 		this.engine.addSystem(new game_MachineSystem(),2);
 		this.engine.addSystem(new game_ObjectSystem(),3);
 		this.engine.addSystem(new game_AutoRemoveSystem(),4);
-	}
-	,update: function() {
-		var dt = whiplash_Lib.getDeltaTime() / 1000;
-		this.engine.update(dt);
 	}
 	,createGrid: function(w,h) {
 		this.grid = [];
@@ -1480,7 +1728,7 @@ game_Game.prototype = {
 		this.engine.addEntity(e);
 	}
 	,__class__: game_Game
-};
+});
 var game_Machine = function() {
 	this.reachedPosition = new game_Coord(0,0);
 	this.time = 0.0;
@@ -1891,6 +2139,33 @@ game_TileSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	}
 	,__class__: game_TileSystem
 });
+var haxe_Timer = function(time_ms) {
+	var me = this;
+	this.id = setInterval(function() {
+		me.run();
+	},time_ms);
+};
+haxe_Timer.__name__ = ["haxe","Timer"];
+haxe_Timer.delay = function(f,time_ms) {
+	var t = new haxe_Timer(time_ms);
+	t.run = function() {
+		t.stop();
+		f();
+	};
+	return t;
+};
+haxe_Timer.prototype = {
+	stop: function() {
+		if(this.id == null) {
+			return;
+		}
+		clearInterval(this.id);
+		this.id = null;
+	}
+	,run: function() {
+	}
+	,__class__: haxe_Timer
+};
 var haxe_ds_IntMap = function() {
 	this.h = { };
 };
@@ -1918,6 +2193,23 @@ haxe_ds_ObjectMap.prototype = {
 		delete(this.h[id]);
 		delete(this.h.__keys__[id]);
 		return true;
+	}
+	,keys: function() {
+		var a = [];
+		for( var key in this.h.__keys__ ) {
+		if(this.h.hasOwnProperty(key)) {
+			a.push(this.h.__keys__[key]);
+		}
+		}
+		return HxOverrides.iter(a);
+	}
+	,iterator: function() {
+		return { ref : this.h, it : this.keys(), hasNext : function() {
+			return this.it.hasNext();
+		}, next : function() {
+			var i = this.it.next();
+			return this.ref[i.__id__];
+		}};
 	}
 	,__class__: haxe_ds_ObjectMap
 };
@@ -1984,9 +2276,6 @@ haxe_ds_StringMap.prototype = {
 			return true;
 		}
 	}
-	,keys: function() {
-		return HxOverrides.iter(this.arrayKeys());
-	}
 	,arrayKeys: function() {
 		var out = [];
 		for( var key in this.h ) {
@@ -2023,6 +2312,46 @@ haxe_ds_StringMap.prototype = {
 		return s_b;
 	}
 	,__class__: haxe_ds_StringMap
+};
+var haxe_io_Path = function(path) {
+	switch(path) {
+	case ".":case "..":
+		this.dir = path;
+		this.file = "";
+		return;
+	}
+	var c1 = path.lastIndexOf("/");
+	var c2 = path.lastIndexOf("\\");
+	if(c1 < c2) {
+		this.dir = HxOverrides.substr(path,0,c2);
+		path = HxOverrides.substr(path,c2 + 1,null);
+		this.backslash = true;
+	} else if(c2 < c1) {
+		this.dir = HxOverrides.substr(path,0,c1);
+		path = HxOverrides.substr(path,c1 + 1,null);
+	} else {
+		this.dir = null;
+	}
+	var cp = path.lastIndexOf(".");
+	if(cp != -1) {
+		this.ext = HxOverrides.substr(path,cp + 1,null);
+		this.file = HxOverrides.substr(path,0,cp);
+	} else {
+		this.ext = null;
+		this.file = path;
+	}
+};
+haxe_io_Path.__name__ = ["haxe","io","Path"];
+haxe_io_Path.withExtension = function(path,ext) {
+	var s = new haxe_io_Path(path);
+	s.ext = ext;
+	return s.toString();
+};
+haxe_io_Path.prototype = {
+	toString: function() {
+		return (this.dir == null ? "" : this.dir + (this.backslash ? "\\" : "/")) + this.file + (this.ext == null ? "" : "." + this.ext);
+	}
+	,__class__: haxe_io_Path
 };
 var js__$Boot_HaxeError = function(val) {
 	Error.call(this);
@@ -2231,6 +2560,208 @@ js_Boot.__isNativeObj = function(o) {
 };
 js_Boot.__resolveNativeClass = function(name) {
 	return $global[name];
+};
+var js_uipages_Group = function(parent,showOptions,hideOptions) {
+	this.currentPageIndex = 0;
+	this.parent = parent;
+	this.showOptions = showOptions;
+	this.hideOptions = hideOptions;
+};
+js_uipages_Group.__name__ = ["js","uipages","Group"];
+js_uipages_Group.prototype = {
+	showPage: function(selector) {
+		var _gthis = this;
+		var page;
+		if(typeof(selector) == "number" && ((selector | 0) === selector)) {
+			page = $(this.parent.children()[selector]);
+		} else if(typeof(selector) == "string") {
+			page = this.parent.find(selector);
+		} else {
+			page = selector;
+		}
+		this.parent.children().each(function(index,element) {
+			var that = $(this);
+			if(that[0] != page[0]) {
+				that.hide(_gthis.hideOptions);
+			} else {
+				that.show(_gthis.showOptions);
+				_gthis.currentPage = that;
+				_gthis.currentPageId = that.attr("id");
+				_gthis.currentPageIndex = that.index();
+			}
+		});
+	}
+	,nextPage: function() {
+		var index = this.currentPageIndex + 1;
+		var len = this.parent.children().length;
+		if(index >= len) {
+			index -= len;
+		}
+		this.showPage(index);
+	}
+	,previousPage: function() {
+		var index = this.currentPageIndex - 1;
+		if(index < 0) {
+			index += this.parent.children().length;
+		}
+		this.showPage(index);
+	}
+	,__class__: js_uipages_Group
+};
+var js_uipages_Lib = function() { };
+js_uipages_Lib.__name__ = ["js","uipages","Lib"];
+js_uipages_Lib.main = function() {
+	window.jQuery.prototype["uiPages"] = js_uipages_Lib.uiPages;
+};
+js_uipages_Lib.uiPages = function(parameter1,parameter2) {
+	var that = this;
+	if(parameter1 == null || parameter1 != null && parameter2 != null) {
+		js_uipages_Lib.createGroup(that,parameter1,parameter2);
+	} else if(parameter1 == "next") {
+		js_uipages_Lib.instances.h[that.__id__].nextPage();
+	} else if(parameter1 == "previous") {
+		js_uipages_Lib.instances.h[that.__id__].previousPage();
+	} else if(parameter1 != null) {
+		js_uipages_Lib.instances.h[that.__id__].showPage(parameter1);
+	}
+	return that;
+};
+js_uipages_Lib.createGroup = function(parent,showOptions,hideOptions) {
+	var instance = new js_uipages_Group(parent,showOptions,hideOptions);
+	js_uipages_Lib.instances.set(parent,instance);
+	return instance;
+};
+var whiplash_AudioManager = function() { };
+whiplash_AudioManager.__name__ = ["whiplash","AudioManager"];
+whiplash_AudioManager.init = function(game) {
+	if(game != null) {
+		var _g = 0;
+		var _g1 = whiplash_DataManager.soundFiles;
+		while(_g < _g1.length) {
+			var file = _g1[_g];
+			++_g;
+			var name = new haxe_io_Path(file).file;
+			var this1 = whiplash_AudioManager.sounds;
+			var v = game.add.audio(name);
+			var _this = this1;
+			var value = v;
+			if(__map_reserved[name] != null) {
+				_this.setReserved(name,value);
+			} else {
+				_this.h[name] = value;
+			}
+		}
+	}
+};
+whiplash_AudioManager.playSound = function(name) {
+	var _this = whiplash_AudioManager.sounds;
+	if(!(__map_reserved[name] != null ? _this.existsReserved(name) : _this.h.hasOwnProperty(name))) {
+		console.log("Unknown sound: " + name);
+		return;
+	}
+	if(whiplash_AudioManager.soundIsEnabled) {
+		var _this1 = whiplash_AudioManager.sounds;
+		(__map_reserved[name] != null ? _this1.getReserved(name) : _this1.h[name]).play();
+	}
+};
+whiplash_AudioManager.stopSound = function(name) {
+	var _this = whiplash_AudioManager.sounds;
+	if(!(__map_reserved[name] != null ? _this.existsReserved(name) : _this.h.hasOwnProperty(name))) {
+		console.log("Unknown sound: " + name);
+		return;
+	}
+	var _this1 = whiplash_AudioManager.sounds;
+	(__map_reserved[name] != null ? _this1.getReserved(name) : _this1.h[name]).stop();
+};
+whiplash_AudioManager.playMusic = function(name) {
+	var _this = whiplash_AudioManager.sounds;
+	if((__map_reserved[name] != null ? _this.getReserved(name) : _this.h[name]) == whiplash_AudioManager.music) {
+		return;
+	}
+	if(whiplash_AudioManager.music != null) {
+		whiplash_AudioManager.music.stop();
+	}
+	if(whiplash_AudioManager.musicIsEnabled) {
+		var _this1 = whiplash_AudioManager.sounds;
+		whiplash_AudioManager.music = __map_reserved[name] != null ? _this1.getReserved(name) : _this1.h[name];
+		whiplash_AudioManager.music.play("",0,1,true);
+	}
+};
+whiplash_AudioManager.stopMusic = function() {
+	if(whiplash_AudioManager.music != null) {
+		whiplash_AudioManager.music.stop();
+		whiplash_AudioManager.music = null;
+	}
+};
+whiplash_AudioManager.enableSound = function(enabled) {
+	if(enabled) {
+		var _this = whiplash_AudioManager.sounds;
+		var sound = new haxe_ds__$StringMap_StringMapIterator(_this,_this.arrayKeys());
+		while(sound.hasNext()) {
+			var sound1 = sound.next();
+			if(sound1 != whiplash_AudioManager.music) {
+				sound1.stop();
+			}
+		}
+	}
+	whiplash_AudioManager.soundIsEnabled = enabled;
+};
+whiplash_AudioManager.enableMusic = function(enabled) {
+	if(!enabled) {
+		if(whiplash_AudioManager.music != null) {
+			whiplash_AudioManager.music.stop();
+		}
+	} else if(whiplash_AudioManager.music != null) {
+		whiplash_AudioManager.music.play("",0,1,true);
+	}
+	whiplash_AudioManager.musicIsEnabled = enabled;
+};
+var whiplash_DataManager = function() { };
+whiplash_DataManager.__name__ = ["whiplash","DataManager"];
+whiplash_DataManager.preload = function(game) {
+	if(game != null) {
+		var _g = 0;
+		var _g1 = whiplash_DataManager.textureFiles;
+		while(_g < _g1.length) {
+			var file = _g1[_g];
+			++_g;
+			var name = new haxe_io_Path(file).file;
+			game.load.image(name,file);
+		}
+		var _g2 = 0;
+		var _g11 = whiplash_DataManager.soundFiles;
+		while(_g2 < _g11.length) {
+			var file1 = _g11[_g2];
+			++_g2;
+			var name1 = new haxe_io_Path(file1).file;
+			game.load.audio(name1,file1);
+		}
+		var _g3 = 0;
+		var _g12 = whiplash_DataManager.tilemapFiles;
+		while(_g3 < _g12.length) {
+			var file2 = _g12[_g3];
+			++_g3;
+			var name2 = new haxe_io_Path(file2).file;
+			game.load.tilemap(name2,file2,null,Phaser.Tilemap.TILED_JSON);
+		}
+		var _g4 = 0;
+		var _g13 = whiplash_DataManager.atlasFiles;
+		while(_g4 < _g13.length) {
+			var file3 = _g13[_g4];
+			++_g4;
+			var path = new haxe_io_Path(file3);
+			if(path.ext == "json") {
+				var name3 = path.file;
+				game.load.atlas(name3,haxe_io_Path.withExtension(file3,"png"),file3);
+			}
+		}
+	}
+};
+whiplash_DataManager.preloadFont = function(fontFamily) {
+	var font = new FontFaceObserver(fontFamily);
+	font.load().then(function() {
+		console.log("Font-family loaded: " + fontFamily);
+	});
 };
 var whiplash_Axis = { __ename__ : true, __constructs__ : ["X","Y","Z","W"] };
 whiplash_Axis.X = ["X",0];
@@ -2498,6 +3029,8 @@ whiplash_Lib.init = function(width,height,parent,callbacks,options,systemsPriori
 	whiplash_Lib.ashEngine.addSystem(new whiplash_phaser_GraphicsSystem(whiplash_Lib.phaserGame),systemsPriority);
 	whiplash_Lib.ashEngine.addSystem(new whiplash_phaser_EmitterSystem(whiplash_Lib.phaserGame),systemsPriority);
 };
+var whiplash_Macro = function() { };
+whiplash_Macro.__name__ = ["whiplash","Macro"];
 var whiplash_common_components_Active = function() {
 };
 whiplash_common_components_Active.__name__ = ["whiplash","common","components","Active"];
@@ -3424,7 +3957,6 @@ var Class = { __name__ : ["Class"]};
 var Enum = { };
 var __map_reserved = {};
 ash_core_Entity.nameCount = 0;
-game_AudioManager.sounds = new haxe_ds_StringMap();
 game_Config.width = 320;
 game_Config.height = 240;
 game_Config.rows = 15;
@@ -3432,6 +3964,14 @@ game_Config.cols = 20;
 game_Config.tileSize = 16;
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
+js_uipages_Lib.instances = new haxe_ds_ObjectMap();
+whiplash_AudioManager.soundIsEnabled = true;
+whiplash_AudioManager.musicIsEnabled = true;
+whiplash_AudioManager.sounds = new haxe_ds_StringMap();
+whiplash_DataManager.textureFiles = [];
+whiplash_DataManager.soundFiles = [];
+whiplash_DataManager.tilemapFiles = [];
+whiplash_DataManager.atlasFiles = [];
 whiplash_Input.keys = new haxe_ds_StringMap();
 whiplash_Input.mouseButtons = new haxe_ds_IntMap();
 whiplash_Input.mouseCoordinates = (function($this) {

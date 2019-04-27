@@ -16,26 +16,22 @@ import whiplash.common.components.Active;
 
 import game.TileSystem;
 
-class Game {
+class Game extends Application {
     static public var instance:Game;
     public var grid:Array<Array<TileNode>>;
     public var cutGrid:Array<Array<Bool>>;
-    public var engine:ash.core.Engine;
 
     public function new() {
-        new JQuery(window).on("load", function() {
-            whiplash.Lib.init(Config.width, Config.height, ".root", {preload:preload, create:create, update:update});
-            engine = whiplash.Lib.ashEngine;
-        });
+        super(Config.width, Config.height, ".root");
         instance = this;
     }
 
-    function preload():Void {
-        AudioManager.preload(whiplash.Lib.phaserGame);
+    override function preload():Void {
+        super.preload();
         Factory.preload(whiplash.Lib.phaserGame);
     }
 
-    function create():Void {
+    override function create():Void {
         var game = whiplash.Lib.phaserGame;
         game.stage.smoothed = false;
         game.stage.disableVisibilityChange = true;
@@ -51,12 +47,6 @@ class Game {
         engine.addSystem(new MachineSystem(), 2);
         engine.addSystem(new ObjectSystem(), 3);
         engine.addSystem(new AutoRemoveSystem(), 4);
-    }
-
-
-    function update():Void {
-        var dt = whiplash.Lib.getDeltaTime() / 1000;
-        engine.update(dt);
     }
 
     static function main():Void {
