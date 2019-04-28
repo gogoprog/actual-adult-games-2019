@@ -19,7 +19,6 @@ import game.TileSystem;
 class Game extends Application {
     static public var instance:Game;
     public var grid:Array<Array<TileNode>>;
-    public var cutGrid:Array<Array<Bool>>;
     public var level:Level = new Level();
 
     public function new() {
@@ -43,17 +42,25 @@ class Game extends Application {
         var menuState = createState("menu");
         createUiState("menu", ".menu");
         createUiState("hud", ".hud");
+        createUiState("winning", ".winning");
+        createUiState("losing", ".losing");
 
         engine.addSystem(new TileSystem(), 1);
 
         var menuState = createState("menu");
 
         var ingameState = createState("ingame");
-        ingameState.addInstance(new LevelSystem()).withPriority(1);
         ingameState.addInstance(new MoveSystem()).withPriority(1);
         ingameState.addInstance(new MachineSystem()).withPriority(2);
         ingameState.addInstance(new ObjectSystem()).withPriority(3);
         ingameState.addInstance(new AutoRemoveSystem()).withPriority(4);
+
+        var playingState = createIngameState("playing");
+        playingState.addInstance(new LevelSystem()).withPriority(1);
+        var winningState = createIngameState("winning");
+        winningState.addInstance(new WinningSystem()).withPriority(1);
+        var losingState = createIngameState("losing");
+        losingState.addInstance(new LosingSystem()).withPriority(1);
 
         new JQuery(".play").on("click", function() {
             startGame();
@@ -71,16 +78,13 @@ class Game extends Application {
 
     public function createGrid(w, h) {
         grid = [];
-        cutGrid = [];
 
         for(i in 0...w) {
             grid[i] = [];
-            cutGrid[i] = [];
 
             for(j in 0...h) {
                 var e = Factory.createTile(i, j);
                 engine.addEntity(e);
-                cutGrid[i][j] = false;
             }
         }
     }
@@ -95,6 +99,7 @@ class Game extends Application {
         engine.updateComplete.addOnce(function() {
             changeUiState("hud");
             changeState("ingame");
+            changeIngameState("playing");
         });
     }
 }

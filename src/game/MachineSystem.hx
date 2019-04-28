@@ -39,15 +39,14 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
             pos.x = Std.int(node.object.position.x);
             pos.y = Std.int(node.object.position.y);
             var tileNode = Game.instance.grid[pos.x][pos.y];
-            var isCut = Game.instance.cutGrid[pos.x][pos.y];
 
-            if(!isCut) {
+            if(tileNode.entity.has(Grass)) {
                 tileNode.sprite.loadTexture("grass-cut");
                 var e = Factory.createGrassParticles();
                 e.get(Transform).position.set(tpos.x, tpos.y);
                 e.get(Emitter).start(true, 2000, null, 10);
                 engine.addEntity(e);
-                Game.instance.cutGrid[pos.x][pos.y] = true;
+                tileNode.entity.remove(Grass);
             }
         } else {
             machine.time - 0;

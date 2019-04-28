@@ -9,8 +9,14 @@
   <script src="../deps/whiplash/deps/haxe-phaser/lib/phaser.js"></script>
   <script src="http://localhost:35729/livereload.js"></script>
   <style>
+    @font-face {
+      font-family: 'Main';
+      src: url("../data/gui/ARCADECLASSIC.TTF");
+    }
+
     html,
     body {
+      font-family: 'Main';
       margin: 0;
       height: 100%;
       overflow: hidden
@@ -22,7 +28,9 @@
       top: 0px;
       width: 640px;
       height: 480px;
-      background-color: brown;
+      background-color: #123431;
+      color: white;
+      font-size: 30px;
     }
 
     canvas {
@@ -45,6 +53,30 @@
       top: 0;
       left: 0;
     }
+
+    .title {
+      display: block;
+      width: 100%;
+      height: 100px;
+      background-image: url("../data/gui/title.png");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .logo {
+      display: block;
+      width: 100%;
+      height: 300px;
+      background-image: url("../data/gui/logo.png");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .play {
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -52,9 +84,17 @@
   <div class="root">
     <div class="pages">
       <div class="menu">
-        <button class="play">Play</button>
+        <div class="title"></div>
+        <div class="logo"></div>
+        <div class="play">PRESS SPACE TO START</div>
       </div>
       <div class="hud">
+      </div>
+      <div class="winning">
+        WINRAR
+      </div>
+      <div class="losing">
+        NOOB
       </div>
     </div>
   </div>
