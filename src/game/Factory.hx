@@ -7,10 +7,6 @@ import whiplash.math.*;
 class Factory {
 
     static public function preload(game:phaser.Game) {
-        game.load.image("car", "../data/textures/car.png");
-        game.load.image("grass", "../data/textures/grass.png");
-        game.load.image("grass-cut", "../data/textures/grass-cut.png");
-        game.load.image("particle", "../data/textures/particle.png");
     }
 
     static public function init(game:phaser.Game) {

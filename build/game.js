@@ -1538,10 +1538,6 @@ game_Coord.prototype = {
 var game_Factory = function() { };
 game_Factory.__name__ = ["game","Factory"];
 game_Factory.preload = function(game1) {
-	game1.load.image("car","../data/textures/car.png");
-	game1.load.image("grass","../data/textures/grass.png");
-	game1.load.image("grass-cut","../data/textures/grass-cut.png");
-	game1.load.image("particle","../data/textures/particle.png");
 };
 game_Factory.init = function(game1) {
 };
@@ -3968,7 +3964,7 @@ js_uipages_Lib.instances = new haxe_ds_ObjectMap();
 whiplash_AudioManager.soundIsEnabled = true;
 whiplash_AudioManager.musicIsEnabled = true;
 whiplash_AudioManager.sounds = new haxe_ds_StringMap();
-whiplash_DataManager.textureFiles = [];
+whiplash_DataManager.textureFiles = ["../data/textures/grass.png","../data/textures/flower.png","../data/textures/car.png","../data/textures/grass-sheet.png","../data/textures/grass-cut.png","../data/textures/particle.png"];
 whiplash_DataManager.soundFiles = [];
 whiplash_DataManager.tilemapFiles = [];
 whiplash_DataManager.atlasFiles = [];
