@@ -72,7 +72,7 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
                 var from = machine.reachedPosition;
                 var to = new Coord(from.x + dir.x, from.y + dir.y);
 
-                if(to.x >= 0 && to.x < Config.cols && to.y >= 0 && to.y < Config.rows) {
+                if(to.x >= 0 && to.x < Game.instance.level.width && to.y >= 0 && to.y < Game.instance.level.height) {
                     move = new Move();
                     move.from = from;
                     move.to = to;

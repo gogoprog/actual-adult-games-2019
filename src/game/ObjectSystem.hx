@@ -28,8 +28,9 @@ class ObjectSystem extends ListIteratingSystem<ObjectNode> {
     private function updateNode(node:ObjectNode, dt:Float):Void {
         var tpos = node.transform.position;
         var opos = node.object.position;
-        tpos.x = Config.tileSize/2 + opos.x * Config.tileSize;
-        tpos.y = Config.tileSize/2 + opos.y * Config.tileSize;
+        var level = Game.instance.level;
+        tpos.x = (opos.x + 0.5) * Config.tileSize + Config.width/2 - level.width * Config.tileSize * 0.5;
+        tpos.y = (opos.y + 0.5) * Config.tileSize + Config.height/2 - level.height * Config.tileSize * 0.5;
 
         node.object.nextMoveTime = 0;
     }

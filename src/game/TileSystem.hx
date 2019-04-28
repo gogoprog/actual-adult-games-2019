@@ -32,8 +32,9 @@ class TileSystem extends ListIteratingSystem<TileNode> {
     private function onNodeAdded(node:TileNode) {
         var p = node.transform.position;
         var tile = node.tile;
-        p.x = Config.tileSize/2 + tile.col * Config.tileSize;
-        p.y = Config.tileSize/2 + tile.row * Config.tileSize;
+        var level = Game.instance.level;
+        p.x = (tile.col + 0.5) * Config.tileSize + Config.width/2 - level.width * Config.tileSize * 0.5;
+        p.y = (tile.row + 0.5) * Config.tileSize + Config.height/2 - level.height * Config.tileSize * 0.5;
         Game.instance.grid[tile.col][tile.row] = node;
     }
 

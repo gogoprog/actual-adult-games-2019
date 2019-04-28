@@ -20,6 +20,7 @@ class Game extends Application {
     static public var instance:Game;
     public var grid:Array<Array<TileNode>>;
     public var cutGrid:Array<Array<Bool>>;
+    public var level:Level = new Level();
 
     public function new() {
         super(Config.width, Config.height, ".root");
@@ -39,21 +40,36 @@ class Game extends Application {
         Factory.init(game);
         whiplash.Input.setup(document.querySelector(".hud"));
 
-        createGrid(Config.cols, Config.rows);
-        createMachine();
+        var menuState = createState("menu");
+        createUiState("menu", ".menu");
+        createUiState("hud", ".hud");
 
         engine.addSystem(new TileSystem(), 1);
-        engine.addSystem(new MoveSystem(), 1);
-        engine.addSystem(new MachineSystem(), 2);
-        engine.addSystem(new ObjectSystem(), 3);
-        engine.addSystem(new AutoRemoveSystem(), 4);
+
+        var menuState = createState("menu");
+
+        var ingameState = createState("ingame");
+        ingameState.addInstance(new LevelSystem()).withPriority(1);
+        ingameState.addInstance(new MoveSystem()).withPriority(1);
+        ingameState.addInstance(new MachineSystem()).withPriority(2);
+        ingameState.addInstance(new ObjectSystem()).withPriority(3);
+        ingameState.addInstance(new AutoRemoveSystem()).withPriority(4);
+
+        new JQuery(".play").on("click", function() {
+            startGame();
+        });
+
+        engine.updateComplete.addOnce(function() {
+            changeState("menu");
+            changeUiState("menu");
+        });
     }
 
     static function main():Void {
         new Game();
     }
 
-    function createGrid(w, h) {
+    public function createGrid(w, h) {
         grid = [];
         cutGrid = [];
 
@@ -64,15 +80,21 @@ class Game extends Application {
             for(j in 0...h) {
                 var e = Factory.createTile(i, j);
                 engine.addEntity(e);
-
                 cutGrid[i][j] = false;
             }
         }
     }
 
-    function createMachine() {
+    public function createMachine() {
         var e = Factory.createMachine();
         var p = e.get(Transform).position;
         engine.addEntity(e);
+    }
+
+    public function startGame() {
+        engine.updateComplete.addOnce(function() {
+            changeUiState("hud");
+            changeState("ingame");
+        });
     }
 }
