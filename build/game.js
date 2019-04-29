@@ -1861,16 +1861,15 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 		winningState.addProvider(new ash_fsm_SystemInstanceProvider(new game_WinningSystem())).withPriority(1);
 		var losingState = this.createIngameState("losing");
 		losingState.addProvider(new ash_fsm_SystemInstanceProvider(new game_LosingSystem())).withPriority(1);
-		var e = game_Factory.createBackground();
-		this.engine.addEntity(e);
 		$(".play").on("click",null,function() {
 			_gthis.startGame();
 		});
 		this.gotoMainMenu();
 	}
 	,update: function() {
-		whiplash_Application.prototype.update.call(this);
 		whiplash_Input.update();
+		whiplash_Application.prototype.update.call(this);
+		whiplash_Input.postUpdate();
 	}
 	,createGrid: function(w,h) {
 		this.grid = [];
@@ -1903,6 +1902,9 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 	}
 	,gotoMainMenu: function() {
 		var _gthis = this;
+		this.engine.removeAllEntities();
+		var e = game_Factory.createBackground();
+		this.engine.addEntity(e);
 		this.engine.updateComplete.addOnce(function() {
 			_gthis.changeState("menu");
 			_gthis.changeUiState("menu");
@@ -2024,7 +2026,19 @@ game_LevelSystem.prototype = $extend(ash_core_System.prototype,{
 			this.scoreInt = iscore;
 			this.scoreLabel.text("" + iscore);
 		}
-		if(this.nodeList.head == null) {
+		var cheat;
+		var _this = whiplash_Input.keys;
+		if(__map_reserved["F2"] != null ? _this.getReserved("F2") : _this.h["F2"]) {
+			var _this1 = whiplash_Input.keys;
+			if(__map_reserved["F4"] != null) {
+				cheat = _this1.getReserved("F4");
+			} else {
+				cheat = _this1.h["F4"];
+			}
+		} else {
+			cheat = false;
+		}
+		if(this.nodeList.head == null || cheat) {
 			var levelId = game_Game.instance.level.index + 1;
 			var savedTxt = js_Browser.getLocalStorage().getItem("level" + levelId);
 			var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
@@ -2224,8 +2238,7 @@ game_MenuSystem.prototype = $extend(ash_core_System.prototype,{
 		ash_core_System.prototype.removeFromEngine.call(this,engine);
 	}
 	,update: function(dt) {
-		var _this = whiplash_Input.keys;
-		if(__map_reserved[" "] != null ? _this.getReserved(" ") : _this.h[" "]) {
+		if(whiplash_Input.isKeyJustPressed(" ")) {
 			game_Game.instance.startGame();
 		}
 	}
@@ -2539,18 +2552,8 @@ game_WinningSystem.prototype = $extend(ash_core_System.prototype,{
 		ash_core_System.prototype.removeFromEngine.call(this,engine);
 	}
 	,update: function(dt) {
-		var tmp;
-		if(!this.continued) {
-			var _this = whiplash_Input.keys;
-			if(__map_reserved[" "] != null) {
-				tmp = _this.getReserved(" ");
-			} else {
-				tmp = _this.h[" "];
-			}
-		} else {
-			tmp = false;
-		}
-		if(tmp) {
+		if(!this.continued && whiplash_Input.isKeyJustPressed(" ")) {
+			console.log("WORD");
 			if(!this.completed) {
 				game_Game.instance.level.index++;
 				game_Game.instance.startGame();

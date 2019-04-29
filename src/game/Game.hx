@@ -64,10 +64,6 @@ class Game extends Application {
         var losingState = createIngameState("losing");
         losingState.addInstance(new LosingSystem()).withPriority(1);
 
-
-        var e = Factory.createBackground();
-        engine.addEntity(e);
-
         new JQuery(".play").on("click", function() {
             startGame();
         });
@@ -76,8 +72,9 @@ class Game extends Application {
     }
 
     override function update() {
-        super.update();
         whiplash.Input.update();
+        super.update();
+        whiplash.Input.postUpdate();
     }
 
     static function main():Void {
@@ -112,6 +109,9 @@ class Game extends Application {
     }
 
     public function gotoMainMenu() {
+        engine.removeAllEntities();
+        var e = Factory.createBackground();
+        engine.addEntity(e);
         engine.updateComplete.addOnce(function() {
             changeState("menu");
             changeUiState("menu");

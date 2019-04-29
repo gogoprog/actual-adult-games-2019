@@ -133,7 +133,9 @@ class LevelSystem extends ash.core.System {
             scoreLabel.text("" + iscore);
         }
 
-        if(nodeList.empty) {
+        var cheat = whiplash.Input.keys["F2"] && whiplash.Input.keys["F4"];
+
+        if(nodeList.empty || cheat) {
             var levelId = Game.instance.level.index + 1;
             var savedTxt = js.Browser.getLocalStorage().getItem("level" + levelId);
             var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);

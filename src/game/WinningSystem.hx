@@ -36,7 +36,8 @@ class WinningSystem extends ash.core.System {
     }
 
     public override function update(dt) {
-        if(!continued && whiplash.Input.keys[" "]) {
+        if(!continued && whiplash.Input.isKeyJustPressed(" ")) {
+            trace("WORD");
             if(!completed) {
                 Game.instance.level.index++;
                 Game.instance.startGame();
