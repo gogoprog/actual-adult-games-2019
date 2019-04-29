@@ -1864,6 +1864,10 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 		$(".play").on("click",null,function() {
 			_gthis.startGame();
 		});
+		var savedTxt = js_Browser.getLocalStorage().getItem("totalScore");
+		var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
+		$(".bestTotalScore").text("" + savedScore);
+		this.totalScore = 0;
 		this.gotoMainMenu();
 	}
 	,update: function() {
@@ -2050,6 +2054,7 @@ game_LevelSystem.prototype = $extend(ash_core_System.prototype,{
 				$(".newBest").hide();
 				$(".bestScore").text("" + savedScore);
 			}
+			game_Game.instance.totalScore += iscore;
 			game_Game.instance.changeIngameState("winning");
 			game_Game.instance.changeUiState("winning");
 		}
@@ -2178,7 +2183,10 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 				tileNode.entity.remove(game_Grass);
 			}
 			if(tileNode.entity.has(game_Flower)) {
-				this.engine.getSystem(game_LevelSystem).score -= 10;
+				var levelSystem = this.engine.getSystem(game_LevelSystem);
+				if(levelSystem != null) {
+					levelSystem.score -= 10;
+				}
 				whiplash_AudioManager.playSound("ohnoes" + Std.random(3));
 				tileNode.sprite.frame = 1;
 				var e1 = game_Factory.createGrassParticles();
@@ -2547,19 +2555,28 @@ game_WinningSystem.prototype = $extend(ash_core_System.prototype,{
 			$(".gameCompleted").hide();
 		}
 		whiplash_AudioManager.playSound("win");
+		$(".newBestTotal").hide();
+		var savedTxt = js_Browser.getLocalStorage().getItem("totalScore");
+		var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
+		console.log(game_Game.instance.totalScore);
+		if(savedScore < game_Game.instance.totalScore) {
+			js_Browser.getLocalStorage().setItem("totalScore","" + game_Game.instance.totalScore);
+			$(".newBestTotal").show();
+			$(".bestTotalScore").text("" + game_Game.instance.totalScore);
+		}
 	}
 	,removeFromEngine: function(engine) {
 		ash_core_System.prototype.removeFromEngine.call(this,engine);
 	}
 	,update: function(dt) {
 		if(!this.continued && whiplash_Input.isKeyJustPressed(" ")) {
-			console.log("WORD");
 			if(!this.completed) {
 				game_Game.instance.level.index++;
 				game_Game.instance.startGame();
 			} else {
 				game_Game.instance.level.index = 0;
 				game_Game.instance.gotoMainMenu();
+				game_Game.instance.totalScore = 0;
 			}
 			this.continued = true;
 		}
@@ -4398,7 +4415,7 @@ ash_core_Entity.nameCount = 0;
 game_Config.width = 320;
 game_Config.height = 240;
 game_Config.tileSize = 16;
-game_LevelSystem.defs = [{ width : 6, height : 5},{ width : 10, height : 3},{ width : 7, height : 7, flowers : [[2,2],[3,2],[3,3],[2,3]]},{ width : 9, height : 9, flowers : [[0,4],[1,4],[2,4],[3,4],[0,4],[5,4],[6,4],[7,4],[8,4]]},{ width : 7, height : 7, flowers : [[6,0],[5,1],[4,2],[3,3]]}];
+game_LevelSystem.defs = [{ width : 6, height : 5},{ width : 10, height : 3},{ width : 7, height : 7, flowers : [[2,2],[3,2],[3,3],[2,3]]},{ width : 9, height : 9, flowers : [[0,4],[1,4],[2,4],[3,4],[0,4],[5,4],[6,4],[7,4],[8,4]]},{ width : 7, height : 7, flowers : [[6,0],[5,1],[4,2],[3,3]]},{ width : 14, height : 3, flowers : [[6,0],[10,1],[13,2]]},{ width : 10, height : 10, flowers : [[6,0],[9,1],[9,2],[9,9],[1,0]]},{ width : 11, height : 11, flowers : [[6,0],[7,1],[7,2],[7,9],[1,0],[3,1],[3,2],[3,9],[3,10],[5,10],[7,10]]}];
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
 js_uipages_Lib.instances = new haxe_ds_ObjectMap();

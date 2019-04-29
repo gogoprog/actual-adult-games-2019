@@ -34,7 +34,7 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
         var dir = new Coord(0, 0);
         var move = node.entity.get(Move);
 
-        if(node.entity.get(Crash) != null ){
+        if(node.entity.get(Crash) != null) {
             return;
         }
 
@@ -53,8 +53,14 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
                 engine.addEntity(e);
                 tileNode.entity.remove(Grass);
             }
+
             if(tileNode.entity.has(Flower)) {
-                engine.getSystem(LevelSystem).score -= 10;
+                var levelSystem = engine.getSystem(LevelSystem);
+
+                if(levelSystem != null) {
+                    levelSystem.score -= 10;
+                }
+
                 whiplash.AudioManager.playSound("ohnoes" + Std.random(3));
                 tileNode.sprite.frame = 1;
                 var e = Factory.createGrassParticles();

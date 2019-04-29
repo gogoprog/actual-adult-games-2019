@@ -55,6 +55,40 @@ class LevelSystem extends ash.core.System {
             [4, 2],
             [3, 3],
         ]
+    }, {
+        width:14,
+        height:3,
+        flowers: [
+            [6, 0],
+            [10, 1],
+            [13, 2],
+        ]
+    }, {
+        width:10,
+        height:10,
+        flowers: [
+            [6, 0],
+            [9, 1],
+            [9, 2],
+            [9, 9],
+            [1, 0],
+        ]
+    }, {
+        width:11,
+        height:11,
+        flowers: [
+            [6, 0],
+            [7, 1],
+            [7, 2],
+            [7, 9],
+            [1, 0],
+            [3, 1],
+            [3, 2],
+            [3, 9],
+            [3, 10],
+            [5, 10],
+            [7, 10],
+        ]
     } ];
 
     private var nodeList:NodeList<GrassNode>;
@@ -149,6 +183,7 @@ class LevelSystem extends ash.core.System {
                 new JQuery(".bestScore").text("" + savedScore);
             }
 
+            Game.instance.totalScore += iscore;
             Game.instance.changeIngameState("winning");
             Game.instance.changeUiState("winning");
         }

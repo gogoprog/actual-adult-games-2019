@@ -20,6 +20,7 @@ class Game extends Application {
     static public var instance:Game;
     public var grid:Array<Array<TileNode>>;
     public var level:Level = new Level();
+    public var totalScore:Int;
 
     public function new() {
         super(Config.width, Config.height, ".root");
@@ -68,6 +69,13 @@ class Game extends Application {
             startGame();
         });
 
+        {
+            var savedTxt = js.Browser.getLocalStorage().getItem("totalScore");
+            var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
+            new JQuery(".bestTotalScore").text(""+savedScore);
+        }
+
+        totalScore = 0;
         gotoMainMenu();
     }
 
