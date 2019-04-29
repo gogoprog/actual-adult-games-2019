@@ -2020,6 +2020,7 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 			pos.y = node.object.position.y | 0;
 			var tileNode = game_Game.instance.grid[pos.x][pos.y];
 			if(tileNode.entity.has(game_Grass)) {
+				whiplash_AudioManager.playSound("cutting");
 				tileNode.sprite.loadTexture("grass-cut");
 				var e = game_Factory.createGrassParticles();
 				e.get(whiplash_phaser_Transform).position.set(tpos.x,tpos.y);
@@ -2055,8 +2056,10 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 		}
 	}
 	,onNodeAdded: function(node) {
+		whiplash_AudioManager.playMusic("engine");
 	}
 	,onNodeRemoved: function(node) {
+		whiplash_AudioManager.stopMusic();
 	}
 	,__class__: game_MachineSystem
 });
@@ -4236,7 +4239,7 @@ whiplash_AudioManager.soundIsEnabled = true;
 whiplash_AudioManager.musicIsEnabled = true;
 whiplash_AudioManager.sounds = new haxe_ds_StringMap();
 whiplash_DataManager.textureFiles = ["../data/textures/grass.png","../data/textures/flower.png","../data/textures/car.png","../data/textures/grass-sheet.png","../data/textures/grass-cut.png","../data/textures/particle.png"];
-whiplash_DataManager.soundFiles = [];
+whiplash_DataManager.soundFiles = ["../data/sounds/engine.wav","../data/sounds/cutting.wav"];
 whiplash_DataManager.tilemapFiles = [];
 whiplash_DataManager.atlasFiles = [];
 whiplash_Input.keys = new haxe_ds_StringMap();

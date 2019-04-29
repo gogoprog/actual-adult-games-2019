@@ -41,6 +41,7 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
             var tileNode = Game.instance.grid[pos.x][pos.y];
 
             if(tileNode.entity.has(Grass)) {
+                whiplash.AudioManager.playSound("cutting");
                 tileNode.sprite.loadTexture("grass-cut");
                 var e = Factory.createGrassParticles();
                 e.get(Transform).position.set(tpos.x, tpos.y);
@@ -83,9 +84,11 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
     }
 
     private function onNodeAdded(node:MachineNode) {
+        whiplash.AudioManager.playMusic("engine");
     }
 
     private function onNodeRemoved(node:MachineNode) {
+        whiplash.AudioManager.stopMusic();
     }
 }
 
