@@ -37,7 +37,7 @@ class Game extends Application {
         game.stage.disableVisibilityChange = true;
         AudioManager.init(game);
         Factory.preload(game);
-        whiplash.Input.setup(document.querySelector(".hud"));
+        whiplash.Input.setup(document.querySelector(".root"));
 
         var menuState = createState("menu");
         createUiState("menu", ".menu");
@@ -55,6 +55,7 @@ class Game extends Application {
         ingameState.addInstance(new MachineSystem()).withPriority(2);
         ingameState.addInstance(new ObjectSystem()).withPriority(3);
         ingameState.addInstance(new AutoRemoveSystem()).withPriority(4);
+        ingameState.addInstance(new CrashSystem());
 
         var playingState = createIngameState("playing");
         playingState.addInstance(new LevelSystem()).withPriority(1);
@@ -72,6 +73,11 @@ class Game extends Application {
         });
 
         gotoMainMenu();
+    }
+
+    override function update() {
+        super.update();
+        whiplash.Input.update();
     }
 
     static function main():Void {

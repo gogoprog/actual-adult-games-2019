@@ -14,12 +14,12 @@ class LevelSystem extends ash.core.System {
     static public var defs:Array<Dynamic> = [ {
         width:6,
         height:5
-    }, {
-        width:10,
-        height:3
-    }, {
-        width:7,
-        height:7
+    // }, {
+    //     width:10,
+    //     height:3
+    // }, {
+    //     width:7,
+    //     height:7
     } ];
 
     private var nodeList:NodeList<GrassNode>;

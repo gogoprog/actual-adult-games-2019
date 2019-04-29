@@ -34,6 +34,10 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
         var dir = new Coord(0, 0);
         var move = node.entity.get(Move);
 
+        if(node.entity.get(Crash) != null ){
+            return;
+        }
+
         if(move == null) {
             var pos = machine.reachedPosition;
             pos.x = Std.int(node.object.position.x);
@@ -77,6 +81,9 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
                     move.from = from;
                     move.to = to;
                     node.entity.add(move);
+                } else {
+                    whiplash.AudioManager.playSound("crash");
+                    node.entity.add(new Crash());
                 }
             }
         }
