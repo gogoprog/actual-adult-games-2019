@@ -13,11 +13,26 @@ class WinningSystem extends ash.core.System {
 
     public override function addToEngine(engine:Engine) {
         super.addToEngine(engine);
+        var id = Game.instance.level.index + 1;
+        var completed = false;
+        new JQuery(".levelId").text("" + id);
 
-        Game.instance.delay(function(){
-            Game.instance.level.index++;
-            Game.instance.startGame();
-        }, 2);
+        if(Game.instance.level.index + 1 >= LevelSystem.defs.length) {
+            completed = true;
+            new JQuery(".gameCompleted").show();
+        } else {
+            new JQuery(".gameCompleted").hide();
+        }
+
+        Game.instance.delay(function() {
+            if(!completed) {
+                Game.instance.level.index++;
+                Game.instance.startGame();
+            } else {
+                Game.instance.level.index = 0;
+                Game.instance.gotoMainMenu();
+            }
+        }, 5);
     }
 
     public override function removeFromEngine(engine:Engine) {

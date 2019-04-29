@@ -11,7 +11,7 @@ class GrassNode extends Node<GrassNode> {
 }
 
 class LevelSystem extends ash.core.System {
-    static var defs:Array<Dynamic> = [ {
+    static public var defs:Array<Dynamic> = [ {
         width:6,
         height:5
     }, {
@@ -77,17 +77,30 @@ class LevelSystem extends ash.core.System {
     }
 
     public override function update(dt:Float) {
-        {
-            score -= dt;
-            var iscore = Std.int(score);
+        score -= dt;
 
-            if(iscore != scoreInt) {
-                scoreInt = iscore;
-                scoreLabel.text("" + iscore);
-            }
+        if(score < 0) { score = 0; }
+
+        var iscore = Std.int(score);
+
+        if(iscore != scoreInt) {
+            scoreInt = iscore;
+            scoreLabel.text("" + iscore);
         }
 
         if(nodeList.empty) {
+            var levelId = Game.instance.level.index + 1;
+            var savedTxt = js.Browser.getLocalStorage().getItem("level" + levelId);
+            var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
+            new JQuery(".bestScore").text("" + savedScore);
+
+            if(savedScore < iscore) {
+                js.Browser.getLocalStorage().setItem("level"+levelId, ""+iscore);
+                new JQuery(".newBest").show();
+            } else {
+                new JQuery(".newBest").hide();
+            }
+
             Game.instance.changeIngameState("winning");
             Game.instance.changeUiState("winning");
         }

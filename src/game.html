@@ -46,7 +46,8 @@
       height: 480px !important;
     }
 
-    .root>div {
+    .root>div,
+    .pages>div {
       position: absolute;
       width: 100%;
       height: 100%;
@@ -77,6 +78,11 @@
       width: 100%;
       text-align: center;
     }
+
+    .winning {
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
   </style>
 </head>
 
@@ -89,10 +95,15 @@
         <div class="play">PRESS SPACE TO START</div>
       </div>
       <div class="hud">
-        <div class="bottom">Score: <span class="score">0</span></div>
+        <div>Score: <span class="score">0</span></div>
       </div>
       <div class="winning">
-        WINRAR
+        <span>Level <span class="levelId">?</span> completed!</span>
+        <p/>
+        <div>Score: <span class="score">0</span></div>
+        <div>Best: <span class="bestScore">0</span><p/><span class="newBest">NEW BEST SCORE!</span></div>
+        <p/>
+        <span class="gameCompleted">GAME COMPLETED !!</span>
       </div>
       <div class="losing">
         NOOB

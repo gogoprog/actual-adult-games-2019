@@ -48,6 +48,7 @@ class Game extends Application {
         engine.addSystem(new TileSystem(), 1);
 
         var menuState = createState("menu");
+        menuState.addInstance(new MenuSystem());
 
         var ingameState = createState("ingame");
         ingameState.addInstance(new MoveSystem()).withPriority(1);
@@ -70,10 +71,7 @@ class Game extends Application {
             startGame();
         });
 
-        engine.updateComplete.addOnce(function() {
-            changeState("menu");
-            changeUiState("menu");
-        });
+        gotoMainMenu();
     }
 
     static function main():Void {
@@ -104,6 +102,13 @@ class Game extends Application {
             changeUiState("hud");
             changeState("ingame");
             changeIngameState("playing");
+        });
+    }
+
+    public function gotoMainMenu() {
+        engine.updateComplete.addOnce(function() {
+            changeState("menu");
+            changeUiState("menu");
         });
     }
 }

@@ -8,6 +8,13 @@ function $extend(from, fields) {
 }
 var HxOverrides = function() { };
 HxOverrides.__name__ = ["HxOverrides"];
+HxOverrides.cca = function(s,index) {
+	var x = s.charCodeAt(index);
+	if(x != x) {
+		return undefined;
+	}
+	return x;
+};
 HxOverrides.substr = function(s,pos,len) {
 	if(len == null) {
 		len = s.length;
@@ -54,6 +61,16 @@ var Std = function() { };
 Std.__name__ = ["Std"];
 Std.string = function(s) {
 	return js_Boot.__string_rec(s,"");
+};
+Std.parseInt = function(x) {
+	var v = parseInt(x,10);
+	if(v == 0 && (HxOverrides.cca(x,1) == 120 || HxOverrides.cca(x,1) == 88)) {
+		v = parseInt(x);
+	}
+	if(isNaN(v)) {
+		return null;
+	}
+	return v;
 };
 var Type = function() { };
 Type.__name__ = ["Type"];
@@ -1717,6 +1734,7 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 		this.createUiState("losing",".losing");
 		this.engine.addSystem(new game_TileSystem(),1);
 		var menuState1 = this.createState("menu");
+		menuState1.addProvider(new ash_fsm_SystemInstanceProvider(new game_MenuSystem()));
 		var ingameState = this.createState("ingame");
 		ingameState.addProvider(new ash_fsm_SystemInstanceProvider(new game_MoveSystem())).withPriority(1);
 		ingameState.addProvider(new ash_fsm_SystemInstanceProvider(new game_MachineSystem())).withPriority(2);
@@ -1733,10 +1751,7 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 		$(".play").on("click",null,function() {
 			_gthis.startGame();
 		});
-		this.engine.updateComplete.addOnce(function() {
-			_gthis.changeState("menu");
-			_gthis.changeUiState("menu");
-		});
+		this.gotoMainMenu();
 	}
 	,createGrid: function(w,h) {
 		this.grid = [];
@@ -1765,6 +1780,13 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 			_gthis.changeUiState("hud");
 			_gthis.changeState("ingame");
 			_gthis.changeIngameState("playing");
+		});
+	}
+	,gotoMainMenu: function() {
+		var _gthis = this;
+		this.engine.updateComplete.addOnce(function() {
+			_gthis.changeState("menu");
+			_gthis.changeUiState("menu");
 		});
 	}
 	,__class__: game_Game
@@ -1863,12 +1885,25 @@ game_LevelSystem.prototype = $extend(ash_core_System.prototype,{
 	}
 	,update: function(dt) {
 		this.score -= dt;
+		if(this.score < 0) {
+			this.score = 0;
+		}
 		var iscore = this.score | 0;
 		if(iscore != this.scoreInt) {
 			this.scoreInt = iscore;
 			this.scoreLabel.text("" + iscore);
 		}
 		if(this.nodeList.head == null) {
+			var levelId = game_Game.instance.level.index + 1;
+			var savedTxt = js_Browser.getLocalStorage().getItem("level" + levelId);
+			var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
+			$(".bestScore").text("" + savedScore);
+			if(savedScore < iscore) {
+				js_Browser.getLocalStorage().setItem("level" + levelId,"" + iscore);
+				$(".newBest").show();
+			} else {
+				$(".newBest").hide();
+			}
 			game_Game.instance.changeIngameState("winning");
 			game_Game.instance.changeUiState("winning");
 		}
@@ -2024,6 +2059,26 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	,onNodeRemoved: function(node) {
 	}
 	,__class__: game_MachineSystem
+});
+var game_MenuSystem = function() {
+	ash_core_System.call(this);
+};
+game_MenuSystem.__name__ = ["game","MenuSystem"];
+game_MenuSystem.__super__ = ash_core_System;
+game_MenuSystem.prototype = $extend(ash_core_System.prototype,{
+	addToEngine: function(engine) {
+		ash_core_System.prototype.addToEngine.call(this,engine);
+	}
+	,removeFromEngine: function(engine) {
+		ash_core_System.prototype.removeFromEngine.call(this,engine);
+	}
+	,update: function(dt) {
+		var _this = whiplash_Input.keys;
+		if(__map_reserved[" "] != null ? _this.getReserved(" ") : _this.h[" "]) {
+			game_Game.instance.startGame();
+		}
+	}
+	,__class__: game_MenuSystem
 });
 var game_Move = function() {
 	this.speed = 10;
@@ -2315,10 +2370,24 @@ game_WinningSystem.__super__ = ash_core_System;
 game_WinningSystem.prototype = $extend(ash_core_System.prototype,{
 	addToEngine: function(engine) {
 		ash_core_System.prototype.addToEngine.call(this,engine);
+		var id = game_Game.instance.level.index + 1;
+		var completed = false;
+		$(".levelId").text("" + id);
+		if(game_Game.instance.level.index + 1 >= game_LevelSystem.defs.length) {
+			completed = true;
+			$(".gameCompleted").show();
+		} else {
+			$(".gameCompleted").hide();
+		}
 		game_Game.instance.delay(function() {
-			game_Game.instance.level.index++;
-			game_Game.instance.startGame();
-		},2);
+			if(!completed) {
+				game_Game.instance.level.index++;
+				game_Game.instance.startGame();
+			} else {
+				game_Game.instance.level.index = 0;
+				game_Game.instance.gotoMainMenu();
+			}
+		},5);
 	}
 	,removeFromEngine: function(engine) {
 		ash_core_System.prototype.removeFromEngine.call(this,engine);
@@ -2748,6 +2817,17 @@ js_Boot.__isNativeObj = function(o) {
 };
 js_Boot.__resolveNativeClass = function(name) {
 	return $global[name];
+};
+var js_Browser = function() { };
+js_Browser.__name__ = ["js","Browser"];
+js_Browser.getLocalStorage = function() {
+	try {
+		var s = window.localStorage;
+		s.getItem("");
+		return s;
+	} catch( e ) {
+		return null;
+	}
 };
 var js_uipages_Group = function(parent,showOptions,hideOptions) {
 	this.currentPageIndex = 0;
