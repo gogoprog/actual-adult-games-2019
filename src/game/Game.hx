@@ -36,7 +36,7 @@ class Game extends Application {
         game.stage.smoothed = false;
         game.stage.disableVisibilityChange = true;
         AudioManager.init(game);
-        Factory.init(game);
+        Factory.preload(game);
         whiplash.Input.setup(document.querySelector(".hud"));
 
         var menuState = createState("menu");
@@ -61,6 +61,10 @@ class Game extends Application {
         winningState.addInstance(new WinningSystem()).withPriority(1);
         var losingState = createIngameState("losing");
         losingState.addInstance(new LosingSystem()).withPriority(1);
+
+
+        var e = Factory.createBackground();
+        engine.addEntity(e);
 
         new JQuery(".play").on("click", function() {
             startGame();

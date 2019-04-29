@@ -7,9 +7,7 @@ import whiplash.math.*;
 class Factory {
 
     static public function preload(game:phaser.Game) {
-    }
-
-    static public function init(game:phaser.Game) {
+        game.load.spritesheet('fences', '../data/spritesheets/fences.png', 32, 32, 15);
     }
 
     static public function createTile(i, j) {
@@ -41,7 +39,27 @@ class Factory {
         var emitter = new Emitter(32);
         e.add(emitter);
         emitter.makeParticles("particle");
-        emitter.gravity = new Point(0,0);
+        emitter.gravity = new Point(0, 0);
+        return e;
+    }
+
+    static public function createBackground() {
+        var e = new Entity();
+        e.add(new TileSprite(640, 480, "grass-cut"));
+        e.add(new Transform());
+        return e;
+    }
+
+    static public function createFence(i, j, frame) {
+        var e = new Entity();
+        e.add(new Sprite("fences"));
+        e.add(new Transform());
+        e.add(new Tile(i, j));
+        e.get(Sprite).anchor.set(0.5, 0.5);
+        var s = Config.tileSize / 32;
+        e.get(Transform).scale.set(s, s);
+        e.get(Sprite).frame = frame;
+
         return e;
     }
 }

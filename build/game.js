@@ -1538,8 +1538,7 @@ game_Coord.prototype = {
 var game_Factory = function() { };
 game_Factory.__name__ = ["game","Factory"];
 game_Factory.preload = function(game1) {
-};
-game_Factory.init = function(game1) {
+	game1.load.spritesheet("fences","../data/spritesheets/fences.png",32,32,15);
 };
 game_Factory.createTile = function(i,j) {
 	var e = new ash_core_Entity();
@@ -1570,6 +1569,23 @@ game_Factory.createGrassParticles = function() {
 	emitter.makeParticles("particle");
 	var this1 = new Phaser.Point(0,0);
 	emitter.gravity = this1;
+	return e;
+};
+game_Factory.createBackground = function() {
+	var e = new ash_core_Entity();
+	e.add(new whiplash_phaser_TileSprite(640,480,"grass-cut"));
+	e.add(new whiplash_phaser_Transform());
+	return e;
+};
+game_Factory.createFence = function(i,j,frame) {
+	var e = new ash_core_Entity();
+	e.add(new whiplash_phaser_Sprite("fences"));
+	e.add(new whiplash_phaser_Transform());
+	e.add(new game_Tile(i,j));
+	e.get(whiplash_phaser_Sprite).anchor.set(0.5,0.5);
+	var s = game_Config.tileSize / 32;
+	e.get(whiplash_phaser_Transform).scale.set(s,s);
+	e.get(whiplash_phaser_Sprite).frame = frame;
 	return e;
 };
 var whiplash_Application = function(width,height,parent,whiplash_options) {
@@ -1692,7 +1708,7 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 		game1.stage.smoothed = false;
 		game1.stage.disableVisibilityChange = true;
 		whiplash_AudioManager.init(game1);
-		game_Factory.init(game1);
+		game_Factory.preload(game1);
 		whiplash_Input.setup(window.document.querySelector(".hud"));
 		var menuState = this.createState("menu");
 		this.createUiState("menu",".menu");
@@ -1712,6 +1728,8 @@ game_Game.prototype = $extend(whiplash_Application.prototype,{
 		winningState.addProvider(new ash_fsm_SystemInstanceProvider(new game_WinningSystem())).withPriority(1);
 		var losingState = this.createIngameState("losing");
 		losingState.addProvider(new ash_fsm_SystemInstanceProvider(new game_LosingSystem())).withPriority(1);
+		var e = game_Factory.createBackground();
+		this.engine.addEntity(e);
 		$(".play").on("click",null,function() {
 			_gthis.startGame();
 		});
@@ -1801,18 +1819,55 @@ game_LevelSystem.prototype = $extend(ash_core_System.prototype,{
 		ash_core_System.prototype.addToEngine.call(this,engine);
 		this.nodeList = engine.getNodeList(game_GrassNode);
 		engine.removeAllEntities();
+		var e = game_Factory.createBackground();
+		engine.addEntity(e);
 		var game1 = game_Game.instance;
 		var level = game1.level;
 		var def = game_LevelSystem.defs[level.index];
 		level.width = def.width;
 		level.height = def.height;
+		var e1 = game_Factory.createFence(-1,-1,6);
+		engine.addEntity(e1);
+		var e2 = game_Factory.createFence(-1,level.height,12);
+		engine.addEntity(e2);
+		var e3 = game_Factory.createFence(level.width,level.height,14);
+		engine.addEntity(e3);
+		var e4 = game_Factory.createFence(level.width,-1,8);
+		engine.addEntity(e4);
+		var _g1 = 0;
+		var _g = level.width;
+		while(_g1 < _g) {
+			var c = _g1++;
+			var e5 = game_Factory.createFence(c,-1,1);
+			engine.addEntity(e5);
+			var e6 = game_Factory.createFence(c,level.height,1);
+			engine.addEntity(e6);
+		}
+		var _g11 = 0;
+		var _g2 = level.height;
+		while(_g11 < _g2) {
+			var r = _g11++;
+			var e7 = game_Factory.createFence(-1,r,4);
+			engine.addEntity(e7);
+			var e8 = game_Factory.createFence(level.width,r,4);
+			engine.addEntity(e8);
+		}
 		game1.createGrid(level.width,level.height);
 		game1.createMachine();
+		this.score = 100;
+		this.scoreInt = 0;
+		this.scoreLabel = $(".score");
 	}
 	,removeFromEngine: function(engine) {
 		ash_core_System.prototype.removeFromEngine.call(this,engine);
 	}
 	,update: function(dt) {
+		this.score -= dt;
+		var iscore = this.score | 0;
+		if(iscore != this.scoreInt) {
+			this.scoreInt = iscore;
+			this.scoreLabel.text("" + iscore);
+		}
 		if(this.nodeList.head == null) {
 			game_Game.instance.changeIngameState("winning");
 			game_Game.instance.changeUiState("winning");
@@ -2244,7 +2299,9 @@ game_TileSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 		var level = game_Game.instance.level;
 		p.x = (tile.col + 0.5) * game_Config.tileSize + game_Config.width / 2 - level.width * game_Config.tileSize * 0.5;
 		p.y = (tile.row + 0.5) * game_Config.tileSize + game_Config.height / 2 - level.height * game_Config.tileSize * 0.5;
-		game_Game.instance.grid[tile.col][tile.row] = node;
+		if(tile.col >= 0 && tile.col < level.width && tile.row >= 0 && tile.row < level.height) {
+			game_Game.instance.grid[tile.col][tile.row] = node;
+		}
 	}
 	,onNodeRemoved: function(node) {
 	}
@@ -4091,7 +4148,7 @@ ash_core_Entity.nameCount = 0;
 game_Config.width = 320;
 game_Config.height = 240;
 game_Config.tileSize = 16;
-game_LevelSystem.defs = [{ width : 6, height : 5},{ width : 10, height : 3}];
+game_LevelSystem.defs = [{ width : 6, height : 5},{ width : 10, height : 3},{ width : 7, height : 7}];
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
 js_uipages_Lib.instances = new haxe_ds_ObjectMap();

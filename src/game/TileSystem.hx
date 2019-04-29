@@ -35,7 +35,10 @@ class TileSystem extends ListIteratingSystem<TileNode> {
         var level = Game.instance.level;
         p.x = (tile.col + 0.5) * Config.tileSize + Config.width/2 - level.width * Config.tileSize * 0.5;
         p.y = (tile.row + 0.5) * Config.tileSize + Config.height/2 - level.height * Config.tileSize * 0.5;
-        Game.instance.grid[tile.col][tile.row] = node;
+
+        if(tile.col >= 0 && tile.col < level.width && tile.row >= 0 && tile.row < level.height) {
+            Game.instance.grid[tile.col][tile.row] = node;
+        }
     }
 
     private function onNodeRemoved(node:TileNode) {
