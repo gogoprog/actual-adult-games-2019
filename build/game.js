@@ -3439,6 +3439,7 @@ whiplash_Input.setup = function(element) {
 		} else {
 			_this1.h[k1] = true;
 		}
+		e7.preventDefault();
 	});
 	window.addEventListener("keyup",function(e8) {
 		var k2 = e8.key;
@@ -3448,6 +3449,7 @@ whiplash_Input.setup = function(element) {
 		} else {
 			_this2.h[k2] = false;
 		}
+		e8.preventDefault();
 	});
 };
 var whiplash_Lib = function() { };
