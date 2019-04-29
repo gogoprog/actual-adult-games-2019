@@ -67,7 +67,7 @@
     .logo {
       display: block;
       width: 100%;
-      height: 300px;
+      height: 280px;
       background-image: url("../data/gui/logo.png");
       background-repeat: no-repeat;
       background-position: center;
@@ -83,6 +83,19 @@
       text-align: center;
       background-color: rgba(0, 0, 0, 0.3);
     }
+
+    .bottom {
+      position:absolute;
+      width:100%;
+      left:0;
+      bottom:0;
+    }
+
+    .voices {
+      position:absolute;
+      left:5px;
+      top:300px;
+    }
   </style>
 </head>
 
@@ -92,7 +105,13 @@
       <div class="menu">
         <div class="title"></div>
         <div class="logo"></div>
-        <div class="play">PRESS SPACE TO START</div>
+        <div class="voices">
+          Voices by<br/>
+          Livie Billot<br/>
+          Anouk Billot<br/>
+          Clementine Habets
+        </div>
+        <div class="bottom play">PRESS SPACE TO START</div>
       </div>
       <div class="hud">
         <div>Score: <span class="score">0</span></div>
@@ -104,6 +123,7 @@
         <div>Best: <span class="bestScore">0</span><p/><span class="newBest">NEW BEST SCORE!</span></div>
         <p/>
         <span class="gameCompleted">GAME COMPLETED !!</span>
+        <div class="bottom">PRESS SPACE TO CONTINUE</div>
       </div>
       <div class="losing">
         NOOB

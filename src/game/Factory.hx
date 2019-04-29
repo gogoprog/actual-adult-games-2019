@@ -8,6 +8,7 @@ class Factory {
 
     static public function preload(game:phaser.Game) {
         game.load.spritesheet('fences', '../data/spritesheets/fences.png', 32, 32, 15);
+        game.load.spritesheet('flower', '../data/spritesheets/flower.png', 32, 32, 15);
     }
 
     static public function createTile(i, j) {
@@ -62,4 +63,16 @@ class Factory {
 
         return e;
     }
+
+    static public function convertToFlower(e:Entity) {
+        if(e.get(Grass) != null) {
+            e.remove(Grass);
+        }
+
+        e.get(Sprite).loadTexture("flower");
+        e.get(Sprite).frame = 5;
+
+        e.add(new Flower());
+    }
+
 }

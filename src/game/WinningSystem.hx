@@ -7,6 +7,9 @@ import ash.core.Node;
 import js.jquery.JQuery;
 
 class WinningSystem extends ash.core.System {
+    private var completed = false;
+    private var continued = false;
+
     public function new() {
         super();
     }
@@ -14,7 +17,8 @@ class WinningSystem extends ash.core.System {
     public override function addToEngine(engine:Engine) {
         super.addToEngine(engine);
         var id = Game.instance.level.index + 1;
-        var completed = false;
+        completed = false;
+        continued = false;
         new JQuery(".levelId").text("" + id);
 
         if(Game.instance.level.index + 1 >= LevelSystem.defs.length) {
@@ -24,15 +28,7 @@ class WinningSystem extends ash.core.System {
             new JQuery(".gameCompleted").hide();
         }
 
-        Game.instance.delay(function() {
-            if(!completed) {
-                Game.instance.level.index++;
-                Game.instance.startGame();
-            } else {
-                Game.instance.level.index = 0;
-                Game.instance.gotoMainMenu();
-            }
-        }, 5);
+        whiplash.AudioManager.playSound("win");
     }
 
     public override function removeFromEngine(engine:Engine) {
@@ -40,6 +36,17 @@ class WinningSystem extends ash.core.System {
     }
 
     public override function update(dt) {
+        if(!continued && whiplash.Input.keys[" "]) {
+            if(!completed) {
+                Game.instance.level.index++;
+                Game.instance.startGame();
+            } else {
+                Game.instance.level.index = 0;
+                Game.instance.gotoMainMenu();
+            }
+
+            continued = true;
+        }
     }
 }
 

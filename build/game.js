@@ -72,6 +72,13 @@ Std.parseInt = function(x) {
 	}
 	return v;
 };
+Std.random = function(x) {
+	if(x <= 0) {
+		return 0;
+	} else {
+		return Math.floor(Math.random() * x);
+	}
+};
 var Type = function() { };
 Type.__name__ = ["Type"];
 Type.getClassName = function(c) {
@@ -1648,6 +1655,7 @@ var game_Factory = function() { };
 game_Factory.__name__ = ["game","Factory"];
 game_Factory.preload = function(game1) {
 	game1.load.spritesheet("fences","../data/spritesheets/fences.png",32,32,15);
+	game1.load.spritesheet("flower","../data/spritesheets/flower.png",32,32,15);
 };
 game_Factory.createTile = function(i,j) {
 	var e = new ash_core_Entity();
@@ -1696,6 +1704,20 @@ game_Factory.createFence = function(i,j,frame) {
 	e.get(whiplash_phaser_Transform).scale.set(s,s);
 	e.get(whiplash_phaser_Sprite).frame = frame;
 	return e;
+};
+game_Factory.convertToFlower = function(e) {
+	if(e.get(game_Grass) != null) {
+		e.remove(game_Grass);
+	}
+	e.get(whiplash_phaser_Sprite).loadTexture("flower");
+	e.get(whiplash_phaser_Sprite).frame = 5;
+	e.add(new game_Flower());
+};
+var game_Flower = function() {
+};
+game_Flower.__name__ = ["game","Flower"];
+game_Flower.prototype = {
+	__class__: game_Flower
 };
 var whiplash_Application = function(width,height,parent,whiplash_options) {
 	if(whiplash_options == null) {
@@ -1973,6 +1995,18 @@ game_LevelSystem.prototype = $extend(ash_core_System.prototype,{
 		}
 		game1.createGrid(level.width,level.height);
 		game1.createMachine();
+		if(def.flowers != null) {
+			var _g3 = 0;
+			var _g12 = def.flowers;
+			while(_g3 < _g12.length) {
+				var flower = _g12[_g3];
+				++_g3;
+				var x = flower[0];
+				var y = flower[1];
+				var e9 = game1.grid[x][y].entity;
+				game_Factory.convertToFlower(e9);
+			}
+		}
 		this.score = 100;
 		this.scoreInt = 0;
 		this.scoreLabel = $(".score");
@@ -1994,12 +2028,13 @@ game_LevelSystem.prototype = $extend(ash_core_System.prototype,{
 			var levelId = game_Game.instance.level.index + 1;
 			var savedTxt = js_Browser.getLocalStorage().getItem("level" + levelId);
 			var savedScore = savedTxt == null ? 0 : Std.parseInt(savedTxt);
-			$(".bestScore").text("" + savedScore);
 			if(savedScore < iscore) {
 				js_Browser.getLocalStorage().setItem("level" + levelId,"" + iscore);
 				$(".newBest").show();
+				$(".bestScore").text("" + iscore);
 			} else {
 				$(".newBest").hide();
+				$(".bestScore").text("" + savedScore);
 			}
 			game_Game.instance.changeIngameState("winning");
 			game_Game.instance.changeUiState("winning");
@@ -2127,6 +2162,16 @@ game_MachineSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 				e.get(whiplash_phaser_Emitter).start(true,2000,null,10);
 				this.engine.addEntity(e);
 				tileNode.entity.remove(game_Grass);
+			}
+			if(tileNode.entity.has(game_Flower)) {
+				this.engine.getSystem(game_LevelSystem).score -= 10;
+				whiplash_AudioManager.playSound("ohnoes" + Std.random(3));
+				tileNode.sprite.frame = 1;
+				var e1 = game_Factory.createGrassParticles();
+				e1.get(whiplash_phaser_Transform).position.set(tpos.x,tpos.y);
+				e1.get(whiplash_phaser_Emitter).start(true,2000,null,10);
+				this.engine.addEntity(e1);
+				tileNode.entity.remove(game_Flower);
 			}
 		}
 		if(__map_reserved["ArrowRight"] != null ? keys.getReserved("ArrowRight") : keys.h["ArrowRight"]) {
@@ -2469,6 +2514,8 @@ game_TileSystem.prototype = $extend(ash_tools_ListIteratingSystem.prototype,{
 	,__class__: game_TileSystem
 });
 var game_WinningSystem = function() {
+	this.continued = false;
+	this.completed = false;
 	ash_core_System.call(this);
 };
 game_WinningSystem.__name__ = ["game","WinningSystem"];
@@ -2477,28 +2524,42 @@ game_WinningSystem.prototype = $extend(ash_core_System.prototype,{
 	addToEngine: function(engine) {
 		ash_core_System.prototype.addToEngine.call(this,engine);
 		var id = game_Game.instance.level.index + 1;
-		var completed = false;
+		this.completed = false;
+		this.continued = false;
 		$(".levelId").text("" + id);
 		if(game_Game.instance.level.index + 1 >= game_LevelSystem.defs.length) {
-			completed = true;
+			this.completed = true;
 			$(".gameCompleted").show();
 		} else {
 			$(".gameCompleted").hide();
 		}
-		game_Game.instance.delay(function() {
-			if(!completed) {
+		whiplash_AudioManager.playSound("win");
+	}
+	,removeFromEngine: function(engine) {
+		ash_core_System.prototype.removeFromEngine.call(this,engine);
+	}
+	,update: function(dt) {
+		var tmp;
+		if(!this.continued) {
+			var _this = whiplash_Input.keys;
+			if(__map_reserved[" "] != null) {
+				tmp = _this.getReserved(" ");
+			} else {
+				tmp = _this.h[" "];
+			}
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			if(!this.completed) {
 				game_Game.instance.level.index++;
 				game_Game.instance.startGame();
 			} else {
 				game_Game.instance.level.index = 0;
 				game_Game.instance.gotoMainMenu();
 			}
-		},5);
-	}
-	,removeFromEngine: function(engine) {
-		ash_core_System.prototype.removeFromEngine.call(this,engine);
-	}
-	,update: function(dt) {
+			this.continued = true;
+		}
 	}
 	,__class__: game_WinningSystem
 });
@@ -4334,15 +4395,15 @@ ash_core_Entity.nameCount = 0;
 game_Config.width = 320;
 game_Config.height = 240;
 game_Config.tileSize = 16;
-game_LevelSystem.defs = [{ width : 6, height : 5}];
+game_LevelSystem.defs = [{ width : 6, height : 5},{ width : 10, height : 3},{ width : 7, height : 7, flowers : [[2,2],[3,2],[3,3],[2,3]]},{ width : 9, height : 9, flowers : [[0,4],[1,4],[2,4],[3,4],[0,4],[5,4],[6,4],[7,4],[8,4]]},{ width : 7, height : 7, flowers : [[6,0],[5,1],[4,2],[3,3]]}];
 haxe_ds_ObjectMap.count = 0;
 js_Boot.__toStr = ({ }).toString;
 js_uipages_Lib.instances = new haxe_ds_ObjectMap();
 whiplash_AudioManager.soundIsEnabled = true;
 whiplash_AudioManager.musicIsEnabled = true;
 whiplash_AudioManager.sounds = new haxe_ds_StringMap();
-whiplash_DataManager.textureFiles = ["../data/textures/grass.png","../data/textures/flower.png","../data/textures/car.png","../data/textures/grass-sheet.png","../data/textures/grass-cut.png","../data/textures/particle.png"];
-whiplash_DataManager.soundFiles = ["../data/sounds/crash.wav","../data/sounds/engine.wav","../data/sounds/cutting.wav"];
+whiplash_DataManager.textureFiles = ["../data/textures/grass.png","../data/textures/car.png","../data/textures/grass-sheet.png","../data/textures/grass-cut.png","../data/textures/particle.png"];
+whiplash_DataManager.soundFiles = ["../data/sounds/crash.wav","../data/sounds/win.wav","../data/sounds/ohnoes1.wav","../data/sounds/ohnoes0.wav","../data/sounds/engine.wav","../data/sounds/ohnoes2.wav","../data/sounds/cutting.wav"];
 whiplash_DataManager.tilemapFiles = [];
 whiplash_DataManager.atlasFiles = [];
 whiplash_Input.keys = new haxe_ds_StringMap();

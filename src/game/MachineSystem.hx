@@ -53,6 +53,16 @@ class MachineSystem extends ListIteratingSystem<MachineNode> {
                 engine.addEntity(e);
                 tileNode.entity.remove(Grass);
             }
+            if(tileNode.entity.has(Flower)) {
+                engine.getSystem(LevelSystem).score -= 10;
+                whiplash.AudioManager.playSound("ohnoes" + Std.random(3));
+                tileNode.sprite.frame = 1;
+                var e = Factory.createGrassParticles();
+                e.get(Transform).position.set(tpos.x, tpos.y);
+                e.get(Emitter).start(true, 2000, null, 10);
+                engine.addEntity(e);
+                tileNode.entity.remove(Flower);
+            }
         } else {
             machine.time - 0;
         }
